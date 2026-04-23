@@ -43,10 +43,17 @@
     <el-table :data="orders">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="orderNo" label="单号" />
+      <el-table-column label="状态" width="120">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 3 ? 'danger' : 'success'">
+            {{ orderStatusText(row.status) }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="220">
         <template #default="{ row }">
           <el-button link @click="openDetail(row.id)">查看明细</el-button>
-          <el-button link type="danger" @click="refund(row.id)" v-if="can('sales:refund')">退款</el-button>
+          <el-button link type="danger" @click="refund(row.id)" v-if="can('sales:refund') && row.status !== 3">退款</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -127,6 +134,10 @@ const create = async () => {
 const payTypeText = (payType) => {
   const map = { CASH: '现金', WECHAT: '微信', ALIPAY: '支付宝' }
   return map[payType] || payType || '-'
+}
+
+const orderStatusText = (status) => {
+  return status === 3 ? '已退款' : '交易完成'
 }
 
 const formatAmount = (amount) => {

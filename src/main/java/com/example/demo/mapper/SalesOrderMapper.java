@@ -64,7 +64,7 @@ public interface SalesOrderMapper {
                                             @Param("limit") int limit);
 
     @Select("""
-            select id, order_no as orderNo, total_amount as totalAmount, paid_amount as paidAmount,
+            select id, order_no as orderNo, status, total_amount as totalAmount, paid_amount as paidAmount,
                    pay_type as payType, cashier_name as cashierName, created_at as createdAt
             from sales_order
             order by id desc

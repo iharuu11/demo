@@ -8,6 +8,8 @@ public record SalesOrderSummaryResponse(
         Long id,
         // 销售单号
         String orderNo,
+        // 订单状态（1=交易完成，3=已退款）
+        Integer status,
         // 应收总金额
         BigDecimal totalAmount,
         // 实付金额
