@@ -12,17 +12,23 @@
               <el-option label="ALIPAY" value="ALIPAY" />
             </el-select>
           </el-form-item>
-          <el-form-item label="商品">
-            <el-select v-model="form.productId" placeholder="请选择商品" style="width: 260px" filterable>
-              <el-option
-                v-for="item in productOptions"
-                :key="item.id"
-                :value="item.id"
-                :label="`${item.name}（${item.barcode || '无条码'}）`"
-              />
-            </el-select>
+          <el-form-item label="商品明细">
+            <div class="sales-items-wrap">
+              <div class="sales-item-row" v-for="(item, index) in form.items" :key="index">
+                <el-select v-model="item.productId" placeholder="请选择商品" style="width: 260px" filterable>
+                  <el-option
+                    v-for="product in productOptions"
+                    :key="product.id"
+                    :value="product.id"
+                    :label="`${product.name}（${product.barcode || '无条码'}）`"
+                  />
+                </el-select>
+                <el-input-number v-model="item.quantity" :min="1" style="width: 130px" />
+                <el-button link type="danger" @click="removeItem(index)" :disabled="form.items.length === 1">删除</el-button>
+              </div>
+              <el-button link type="primary" @click="addItem">+ 添加商品</el-button>
+            </div>
           </el-form-item>
-          <el-form-item label="数量"><el-input-number v-model="form.quantity" :min="1" style="width:150px"/></el-form-item>
           <!-- disabled属性用于控制按钮是否可点击 -->
           <el-button type="primary" @click="create" :disabled="!can('sales:create')" style="margin-left:100px">提交订单</el-button>
         </el-form>
@@ -104,15 +110,26 @@ const productOptions = ref([])
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const detail = ref({ items: [] })
-const form = reactive({ payType: 'CASH', productId: null, quantity: 1 })
+const form = reactive({ payType: 'CASH', items: [{ productId: null, quantity: 1 }] })
 const { can } = usePermission()
 
 const loadProducts = async () => {
   const products = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
   productOptions.value = (products || []).filter((item) => item.status === 1)
-  if (!form.productId && productOptions.value.length > 0) {
-    form.productId = productOptions.value[0].id
+  if (productOptions.value.length > 0) {
+    for (const item of form.items) {
+      if (!item.productId) item.productId = productOptions.value[0].id
+    }
   }
+}
+
+const addItem = () => {
+  form.items.push({ productId: productOptions.value[0]?.id || null, quantity: 1 })
+}
+
+const removeItem = (index) => {
+  if (form.items.length <= 1) return
+  form.items.splice(index, 1)
 }
 
 const load = async () => {
@@ -121,13 +138,27 @@ const load = async () => {
   orders.value = await request.get('/sales/orders')
 }
 const create = async () => {
-  if (!form.productId) {
-    ElMessage.warning('请选择商品')
+  if (!form.items.length) {
+    ElMessage.warning('请至少添加一个商品')
     return
   }
-  // 创建一笔销售订单：此处为简化演示，只开一行商品
-  await request.post('/sales/orders', { payType: form.payType, items: [{ productId: form.productId, quantity: form.quantity }] })
+  const invalidItem = form.items.find((item) => !item.productId || !item.quantity || item.quantity < 1)
+  if (invalidItem) {
+    ElMessage.warning('请检查商品和数量，数量需大于0')
+    return
+  }
+
+  // 合并重复商品行，避免同一商品重复提交多条
+  const merged = new Map()
+  for (const item of form.items) {
+    const current = merged.get(item.productId) || 0
+    merged.set(item.productId, current + Number(item.quantity))
+  }
+  const items = Array.from(merged.entries()).map(([productId, quantity]) => ({ productId, quantity }))
+
+  await request.post('/sales/orders', { payType: form.payType, items })
   ElMessage.success('开单成功')
+  form.items = [{ productId: productOptions.value[0]?.id || null, quantity: 1 }]
   load()
 }
 
@@ -241,6 +272,8 @@ onMounted(async () => {
 
 <style scoped>
 .stat-item { margin-bottom:10px }
+.sales-items-wrap { width: 100%; }
+.sales-item-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .receipt-wrap { padding: 4px 2px; }
 .receipt-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .receipt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; color: #606266; }
