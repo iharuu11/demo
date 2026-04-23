@@ -30,26 +30,37 @@
     </el-table>
   </el-card>
 
-  <el-dialog v-model="visible" title="新建采购单" width="560px">
+  <el-dialog v-model="visible" title="新建采购单" width="700px">
     <el-form :model="form" label-width="100px">
-      <!-- 这里为简化演示：每次新建采购单只包含一个商品，真实业务可以扩展成可添加多行 -->
       <el-form-item label="供应商">
-        <el-select v-model="form.supplierId" placeholder="请选择供应商" style="width: 100%">
+        <el-select v-model="form.supplierId" placeholder="请选择供应商" style="width: 100%" filterable>
           <el-option v-for="item in supplierOptions" :key="item.id" :value="item.id" :label="item.name" />
         </el-select>
       </el-form-item>
-      <el-form-item label="商品">
-        <el-select v-model="form.productId" placeholder="请选择商品" style="width: 100%" filterable>
-          <el-option
-            v-for="item in productOptions"
-            :key="item.id"
-            :value="item.id"
-            :label="`${item.name}（${item.barcode || '无条码'}）`"
-          />
-        </el-select>
+      <el-form-item label="商品明细">
+        <div class="purchase-items-wrap">
+          <div class="purchase-item-head">
+            <span>商品</span>
+            <span>数量</span>
+            <span>单价</span>
+            <span>操作</span>
+          </div>
+          <div class="purchase-item-row" v-for="(item, index) in form.items" :key="index">
+            <el-select v-model="item.productId" placeholder="请选择商品" style="width: 280px" filterable>
+              <el-option
+                v-for="product in productOptions"
+                :key="product.id"
+                :value="product.id"
+                :label="`${product.name}（${product.barcode || '无条码'}）`"
+              />
+            </el-select>
+            <el-input-number v-model="item.quantity" :min="1" placeholder="数量" />
+            <el-input-number v-model="item.unitPrice" :min="0.01" :precision="2" placeholder="单价" />
+            <el-button link type="danger" @click="removeItem(index)" :disabled="form.items.length === 1">删除</el-button>
+          </div>
+          <el-button link type="primary" @click="addItem">+ 添加商品</el-button>
+        </div>
       </el-form-item>
-      <el-form-item label="数量"><el-input-number v-model="form.quantity" :min="1" /></el-form-item>
-      <el-form-item label="单价"><el-input-number v-model="form.unitPrice" :min="0.01" :precision="2" /></el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="visible=false">取消</el-button>
@@ -70,7 +81,7 @@ const orderNo = ref('')
 const visible = ref(false)
 const supplierOptions = ref([])
 const productOptions = ref([])
-const form = reactive({ supplierId: null, productId: null, quantity: 1, unitPrice: 1 })
+const form = reactive({ supplierId: null, items: [{ productId: null, quantity: 1, unitPrice: 1 }] })
 const { can } = usePermission()
 
 // 加载采购单列表
@@ -91,9 +102,20 @@ const loadSuppliers = async () => {
 const loadProducts = async () => {
   const products = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
   productOptions.value = (products || []).filter((item) => item.status === 1)
-  if (!form.productId && productOptions.value.length > 0) {
-    form.productId = productOptions.value[0].id
+  if (productOptions.value.length > 0) {
+    for (const item of form.items) {
+      if (!item.productId) item.productId = productOptions.value[0].id
+    }
   }
+}
+
+const addItem = () => {
+  form.items.push({ productId: productOptions.value[0]?.id || null, quantity: 1, unitPrice: 1 })
+}
+
+const removeItem = (index) => {
+  if (form.items.length <= 1) return
+  form.items.splice(index, 1)
 }
 
 const create = async () => {
@@ -101,17 +123,37 @@ const create = async () => {
     ElMessage.warning('请选择供应商')
     return
   }
-  if (!form.productId) {
-    ElMessage.warning('请选择商品')
+  if (!form.items.length) {
+    ElMessage.warning('请至少添加一个商品')
     return
   }
-  // 创建采购单：只传一个 items 元素（简化版）
-  await request.post('/purchases/orders', {
-    supplierId: form.supplierId,
-    items: [{ productId: form.productId, quantity: form.quantity, unitPrice: form.unitPrice }],
-  })
+
+  const invalidItem = form.items.find((item) => !item.productId || !item.quantity || item.quantity < 1 || !item.unitPrice || item.unitPrice <= 0)
+  if (invalidItem) {
+    ElMessage.warning('请检查商品、数量和单价，数量和单价必须大于0')
+    return
+  }
+
+  const merged = new Map()
+  for (const item of form.items) {
+    const key = String(item.productId)
+    const prev = merged.get(key) || { productId: item.productId, quantity: 0, unitPrice: Number(item.unitPrice) }
+    prev.quantity += Number(item.quantity)
+    prev.unitPrice = Number(item.unitPrice)
+    merged.set(key, prev)
+  }
+  const items = Array.from(merged.values()).map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+  }))
+
+  await request.post('/purchases/orders', { supplierId: form.supplierId, items })
+
   visible.value = false
   ElMessage.success('创建成功')
+  form.supplierId = supplierOptions.value[0]?.id || null
+  form.items = [{ productId: productOptions.value[0]?.id || null, quantity: 1, unitPrice: 1 }]
   loadOrders()
 }
 const stockIn = async (id) => {
@@ -133,4 +175,7 @@ onMounted(async () => {
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; }
+.purchase-items-wrap { width: 100%; }
+.purchase-item-head { display: grid; grid-template-columns: 280px 82px 100px 70px; gap: 10px; margin-bottom: 6px; color: #909399; font-size: 12px; }
+.purchase-item-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 </style>
