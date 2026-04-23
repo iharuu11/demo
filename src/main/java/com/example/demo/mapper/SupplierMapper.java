@@ -30,7 +30,12 @@ public interface SupplierMapper {
     @Select("""
             select id, name, contact_name, contact_phone, address, status, created_at
             from supplier
-            where (#{keyword} is null or name like concat('%', #{keyword}, '%') or contact_phone like concat('%', #{keyword}, '%'))
+            where (
+              #{keyword} is null
+              or name like concat('%', #{keyword}, '%')
+              or contact_name like concat('%', #{keyword}, '%')
+              or contact_phone like concat('%', #{keyword}, '%')
+            )
             order by id desc
             limit #{limit} offset #{offset}
             """)
