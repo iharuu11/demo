@@ -33,7 +33,11 @@
   <el-dialog v-model="visible" title="新建采购单" width="560px">
     <el-form :model="form" label-width="100px">
       <!-- 这里为简化演示：每次新建采购单只包含一个商品，真实业务可以扩展成可添加多行 -->
-      <el-form-item label="供应商ID"><el-input-number v-model="form.supplierId" :min="1" /></el-form-item>
+      <el-form-item label="供应商">
+        <el-select v-model="form.supplierId" placeholder="请选择供应商" style="width: 100%">
+          <el-option v-for="item in supplierOptions" :key="item.id" :value="item.id" :label="item.name" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="商品ID"><el-input-number v-model="form.productId" :min="1" /></el-form-item>
       <el-form-item label="数量"><el-input-number v-model="form.quantity" :min="1" /></el-form-item>
       <el-form-item label="单价"><el-input-number v-model="form.unitPrice" :min="0.01" :precision="2" /></el-form-item>
@@ -55,14 +59,29 @@ const orders = ref([])
 const status = ref(null)
 const orderNo = ref('')
 const visible = ref(false)
-const form = reactive({ supplierId: 1, productId: 1, quantity: 1, unitPrice: 1 })
+const supplierOptions = ref([])
+const form = reactive({ supplierId: null, productId: 1, quantity: 1, unitPrice: 1 })
 const { can } = usePermission()
 
 // 加载采购单列表
 const loadOrders = async () => {
   orders.value = await request.get('/purchases/orders', { params: { status: status.value, orderNo: orderNo.value } })
 }
+
+// 加载供应商选项（仅展示启用状态）
+const loadSuppliers = async () => {
+  const suppliers = await request.get('/purchases/suppliers')
+  supplierOptions.value = (suppliers || []).filter((item) => item.status === 1)
+  if (!form.supplierId && supplierOptions.value.length > 0) {
+    form.supplierId = supplierOptions.value[0].id
+  }
+}
+
 const create = async () => {
+  if (!form.supplierId) {
+    ElMessage.warning('请选择供应商')
+    return
+  }
   // 创建采购单：只传一个 items 元素（简化版）
   await request.post('/purchases/orders', {
     supplierId: form.supplierId,
@@ -84,7 +103,9 @@ const cancel = async (id) => {
   ElMessage.success('已取消')
   loadOrders()
 }
-onMounted(loadOrders)
+onMounted(async () => {
+  await Promise.all([loadOrders(), loadSuppliers()])
+})
 </script>
 
 <style scoped>

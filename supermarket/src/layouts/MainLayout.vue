@@ -11,6 +11,7 @@
         <el-menu-item index="/products" v-if="can('product:create') || can('product:update') || can('product:delete')">商品管理</el-menu-item>
         <el-menu-item index="/inventory" v-if="can('inventory:adjust') || can('inventory:warning:update')">库存管理</el-menu-item>
         <el-menu-item index="/purchases" v-if="can('purchase:order:create') || can('purchase:order:stock-in')">采购管理</el-menu-item>
+        <el-menu-item index="/suppliers" v-if="can('purchase:supplier:create') || can('purchase:supplier:update') || can('purchase:supplier:status:update')">供应商管理</el-menu-item>
         <el-menu-item index="/sales" v-if="can('sales:create') || can('sales:refund')">销售管理</el-menu-item>
       </el-menu>
     </el-aside>
