@@ -16,7 +16,13 @@
       <el-table-column prop="barcode" label="条码" />
       <el-table-column prop="salePrice" label="售价" width="100" />
       <el-table-column prop="stockQty" label="库存" width="80" />
-      <el-table-column prop="status" label="状态" width="100" />
+      <el-table-column prop="status" label="状态" width="100" >
+        <template #default="{ row }">
+          <el-tag :type="row.status === 1 ? 'success' : 'info'">
+            {{ row.status === 1 ? '上架' : '下架' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="220">
         <template #default="{ row }">
           <!-- 根据权限决定是否显示编辑/上下架/删除操作 -->
