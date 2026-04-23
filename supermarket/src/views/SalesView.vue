@@ -12,7 +12,16 @@
               <el-option label="ALIPAY" value="ALIPAY" />
             </el-select>
           </el-form-item>
-          <el-form-item label="商品ID"><el-input-number v-model="form.productId" :min="1" style="width:150px"/></el-form-item>
+          <el-form-item label="商品">
+            <el-select v-model="form.productId" placeholder="请选择商品" style="width: 260px" filterable>
+              <el-option
+                v-for="item in productOptions"
+                :key="item.id"
+                :value="item.id"
+                :label="`${item.name}（${item.barcode || '无条码'}）`"
+              />
+            </el-select>
+          </el-form-item>
           <el-form-item label="数量"><el-input-number v-model="form.quantity" :min="1" style="width:150px"/></el-form-item>
           <!-- disabled属性用于控制按钮是否可点击 -->
           <el-button type="primary" @click="create" :disabled="!can('sales:create')" style="margin-left:100px">提交订单</el-button>
@@ -53,8 +62,17 @@ import { usePermission } from '../composables/usePermission'
 
 const overview = ref({})
 const orders = ref([])
-const form = reactive({ payType: 'CASH', productId: 1, quantity: 1 })
+const productOptions = ref([])
+const form = reactive({ payType: 'CASH', productId: null, quantity: 1 })
 const { can } = usePermission()
+
+const loadProducts = async () => {
+  const products = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
+  productOptions.value = (products || []).filter((item) => item.status === 1)
+  if (!form.productId && productOptions.value.length > 0) {
+    form.productId = productOptions.value[0].id
+  }
+}
 
 const load = async () => {
   // 加载今日销售概览 + 销售订单列表
@@ -62,6 +80,10 @@ const load = async () => {
   orders.value = await request.get('/sales/orders')
 }
 const create = async () => {
+  if (!form.productId) {
+    ElMessage.warning('请选择商品')
+    return
+  }
   // 创建一笔销售订单：此处为简化演示，只开一行商品
   await request.post('/sales/orders', { payType: form.payType, items: [{ productId: form.productId, quantity: form.quantity }] })
   ElMessage.success('开单成功')
@@ -74,7 +96,9 @@ const refund = async (id) => {
   load()
 }
 
-onMounted(load)
+onMounted(async () => {
+  await Promise.all([load(), loadProducts()])
+})
 </script>
 
 <style scoped>

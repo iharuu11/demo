@@ -38,7 +38,16 @@
           <el-option v-for="item in supplierOptions" :key="item.id" :value="item.id" :label="item.name" />
         </el-select>
       </el-form-item>
-      <el-form-item label="商品ID"><el-input-number v-model="form.productId" :min="1" /></el-form-item>
+      <el-form-item label="商品">
+        <el-select v-model="form.productId" placeholder="请选择商品" style="width: 100%" filterable>
+          <el-option
+            v-for="item in productOptions"
+            :key="item.id"
+            :value="item.id"
+            :label="`${item.name}（${item.barcode || '无条码'}）`"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="数量"><el-input-number v-model="form.quantity" :min="1" /></el-form-item>
       <el-form-item label="单价"><el-input-number v-model="form.unitPrice" :min="0.01" :precision="2" /></el-form-item>
     </el-form>
@@ -60,7 +69,8 @@ const status = ref(null)
 const orderNo = ref('')
 const visible = ref(false)
 const supplierOptions = ref([])
-const form = reactive({ supplierId: null, productId: 1, quantity: 1, unitPrice: 1 })
+const productOptions = ref([])
+const form = reactive({ supplierId: null, productId: null, quantity: 1, unitPrice: 1 })
 const { can } = usePermission()
 
 // 加载采购单列表
@@ -77,9 +87,22 @@ const loadSuppliers = async () => {
   }
 }
 
+// 加载商品选项（仅展示上架状态）
+const loadProducts = async () => {
+  const products = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
+  productOptions.value = (products || []).filter((item) => item.status === 1)
+  if (!form.productId && productOptions.value.length > 0) {
+    form.productId = productOptions.value[0].id
+  }
+}
+
 const create = async () => {
   if (!form.supplierId) {
     ElMessage.warning('请选择供应商')
+    return
+  }
+  if (!form.productId) {
+    ElMessage.warning('请选择商品')
     return
   }
   // 创建采购单：只传一个 items 元素（简化版）
@@ -104,7 +127,7 @@ const cancel = async (id) => {
   loadOrders()
 }
 onMounted(async () => {
-  await Promise.all([loadOrders(), loadSuppliers()])
+  await Promise.all([loadOrders(), loadSuppliers(), loadProducts()])
 })
 </script>
 
