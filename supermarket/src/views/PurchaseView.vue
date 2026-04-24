@@ -19,7 +19,13 @@
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="orderNo" label="采购单号" />
       <el-table-column prop="supplierName" label="供应商" />
-      <el-table-column prop="statusText" label="状态" width="120" />
+      <el-table-column label="状态" width="120">
+        <template #default="{ row }">
+          <el-tag :type="purchaseStatusTagType(row.status)">
+            {{ purchaseStatusText(row.status) }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="totalAmount" label="总额" width="120" />
       <el-table-column label="操作" width="280">
         <template #default="{ row }">
@@ -192,6 +198,12 @@ const create = async () => {
 const purchaseStatusText = (statusCode) => {
   const map = { 0: '待入库', 1: '已入库', 2: '已取消' }
   return map[statusCode] || '-'
+}
+
+const purchaseStatusTagType = (statusCode) => {
+  if (statusCode === 1) return 'success'
+  if (statusCode === 2) return 'info'
+  return 'warning'
 }
 
 const formatAmount = (amount) => {
