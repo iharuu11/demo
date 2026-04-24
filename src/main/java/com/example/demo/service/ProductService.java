@@ -5,6 +5,7 @@ import com.example.demo.domain.dto.product.CategoryResponse;
 import com.example.demo.domain.dto.product.CreateCategoryRequest;
 import com.example.demo.domain.dto.product.CreateProductRequest;
 import com.example.demo.domain.dto.product.InventoryInfoResponse;
+import com.example.demo.domain.dto.product.InventoryLogPageResponse;
 import com.example.demo.domain.dto.product.InventoryLogResponse;
 import com.example.demo.domain.dto.product.ProductResponse;
 import com.example.demo.domain.dto.product.UpdateCategoryRequest;
@@ -202,12 +203,14 @@ public class ProductService {
         return inventoryMapper.listInventory(safeKeyword, safePageSize, offset);
     }
 
-    public List<InventoryLogResponse> listInventoryLogs(Long productId, int pageNum, int pageSize) {
+    public InventoryLogPageResponse listInventoryLogs(Long productId, int pageNum, int pageSize) {
         // 库存流水分页查询（可按商品过滤）
         int safePageNum = Math.max(pageNum, 1);
         int safePageSize = Math.min(Math.max(pageSize, 1), 100);
         int offset = (safePageNum - 1) * safePageSize;
-        return inventoryMapper.listLogs(productId, safePageSize, offset);
+        List<InventoryLogResponse> records = inventoryMapper.listLogs(productId, safePageSize, offset);
+        long total = inventoryMapper.countLogs(productId);
+        return new InventoryLogPageResponse(records, total);
     }
 
     @Transactional

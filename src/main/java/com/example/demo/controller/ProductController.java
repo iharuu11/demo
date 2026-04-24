@@ -6,6 +6,7 @@ import com.example.demo.domain.dto.product.CategoryResponse;
 import com.example.demo.domain.dto.product.CreateCategoryRequest;
 import com.example.demo.domain.dto.product.CreateProductRequest;
 import com.example.demo.domain.dto.product.InventoryInfoResponse;
+import com.example.demo.domain.dto.product.InventoryLogPageResponse;
 import com.example.demo.domain.dto.product.InventoryLogResponse;
 import com.example.demo.domain.dto.product.ProductResponse;
 import com.example.demo.domain.dto.product.UpdateCategoryRequest;
@@ -148,7 +149,7 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/inventory/logs")
     //查询库存流水，productId为空时查询所有，否则查询指定商品的流水
-    public ApiResponse<List<InventoryLogResponse>> listInventoryLogs(
+    public ApiResponse<InventoryLogPageResponse> listInventoryLogs(
             @RequestParam(required = false) Long productId,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {

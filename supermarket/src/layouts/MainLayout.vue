@@ -10,6 +10,7 @@
         <el-menu-item index="/dashboard">运营看板</el-menu-item>
         <el-menu-item index="/products" v-if="can('product:create') || can('product:update') || can('product:delete')">商品管理</el-menu-item>
         <el-menu-item index="/inventory" v-if="can('inventory:adjust') || can('inventory:warning:update')">库存管理</el-menu-item>
+        <el-menu-item index="/inventory-logs" v-if="can('inventory:adjust') || can('inventory:warning:update')">库存流水</el-menu-item>
         <el-menu-item index="/members">会员管理</el-menu-item>
         <el-menu-item index="/member-balance-logs">会员余额流水</el-menu-item>
         <el-menu-item index="/purchases" v-if="can('purchase:order:create') || can('purchase:order:stock-in')">采购管理</el-menu-item>

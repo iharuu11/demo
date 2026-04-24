@@ -75,6 +75,13 @@ public interface InventoryMapper {
             """)
     List<InventoryLogResponse> listLogs(@Param("productId") Long productId, @Param("limit") int limit, @Param("offset") int offset);
 
+    @Select("""
+            select count(1)
+            from inventory_log il
+            where (#{productId} is null or il.product_id = #{productId})
+            """)
+    long countLogs(@Param("productId") Long productId);
+
     @Delete("delete from inventory where product_id = #{productId}")
     int deleteByProductId(Long productId);
 }
