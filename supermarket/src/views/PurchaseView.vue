@@ -21,8 +21,9 @@
       <el-table-column prop="supplierName" label="供应商" />
       <el-table-column prop="statusText" label="状态" width="120" />
       <el-table-column prop="totalAmount" label="总额" width="120" />
-      <el-table-column label="操作" width="220">
+      <el-table-column label="操作" width="280">
         <template #default="{ row }">
+          <el-button link @click="openDetail(row.id)">查看明细</el-button>
           <el-button link @click="stockIn(row.id)" v-if="row.status===0 && can('purchase:order:stock-in')">入库</el-button>
           <el-button link type="danger" @click="cancel(row.id)" v-if="row.status===0 && can('purchase:order:cancel')">取消</el-button>
         </template>
@@ -67,6 +68,34 @@
       <el-button type="primary" @click="create">创建</el-button>
     </template>
   </el-dialog>
+
+  <el-dialog v-model="detailVisible" title="采购单明细" width="760px">
+    <div v-loading="detailLoading" class="purchase-detail-wrap">
+      <div class="purchase-detail-head">
+        <div>采购单号：{{ detail.orderNo || '-' }}</div>
+        <div>供应商：{{ detail.supplierName || '-' }}</div>
+        <div>状态：{{ purchaseStatusText(detail.status) }}</div>
+        <div>创建人：{{ detail.createdBy || '-' }}</div>
+        <div>创建时间：{{ detail.createdAt || '-' }}</div>
+        <div>入库时间：{{ detail.auditedAt || '-' }}</div>
+      </div>
+
+      <el-table :data="detail.items || []" size="small" style="margin-top: 12px">
+        <el-table-column prop="productName" label="商品" min-width="220" />
+        <el-table-column prop="quantity" label="数量" width="90" />
+        <el-table-column label="单价" width="130">
+          <template #default="{ row }">￥{{ formatAmount(row.unitPrice) }}</template>
+        </el-table-column>
+        <el-table-column label="小计" width="130">
+          <template #default="{ row }">￥{{ formatAmount(row.amount) }}</template>
+        </el-table-column>
+      </el-table>
+
+      <div class="purchase-detail-total">
+        总金额：￥{{ formatAmount(detail.totalAmount) }}
+      </div>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -81,6 +110,9 @@ const orderNo = ref('')
 const visible = ref(false)
 const supplierOptions = ref([])
 const productOptions = ref([])
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detail = ref({ items: [] })
 const form = reactive({ supplierId: null, items: [{ productId: null, quantity: 1, unitPrice: 1 }] })
 const { can } = usePermission()
 
@@ -156,6 +188,27 @@ const create = async () => {
   form.items = [{ productId: productOptions.value[0]?.id || null, quantity: 1, unitPrice: 1 }]
   loadOrders()
 }
+
+const purchaseStatusText = (statusCode) => {
+  const map = { 0: '待入库', 1: '已入库', 2: '已取消' }
+  return map[statusCode] || '-'
+}
+
+const formatAmount = (amount) => {
+  const value = Number(amount)
+  return Number.isFinite(value) ? value.toFixed(2) : '0.00'
+}
+
+const openDetail = async (id) => {
+  detailVisible.value = true
+  detailLoading.value = true
+  try {
+    detail.value = await request.get(`/purchases/orders/${id}`)
+  } finally {
+    detailLoading.value = false
+  }
+}
+
 const stockIn = async (id) => {
   await ElMessageBox.confirm('确认执行采购入库吗？', '提示', { type: 'warning' })
   await request.put(`/purchases/orders/${id}/stock-in`)
@@ -178,4 +231,7 @@ onMounted(async () => {
 .purchase-items-wrap { width: 100%; }
 .purchase-item-head { display: grid; grid-template-columns: 280px 82px 100px 70px; gap: 10px; margin-bottom: 6px; color: #909399; font-size: 12px; }
 .purchase-item-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.purchase-detail-wrap { padding: 4px 2px; }
+.purchase-detail-head { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; color: #606266; }
+.purchase-detail-total { margin-top: 12px; text-align: right; font-size: 15px; font-weight: 600; }
 </style>
