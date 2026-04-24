@@ -5,7 +5,7 @@
         <!-- 顶部工具栏：搜索 + 新增按钮 -->
         <el-input v-model="keyword" placeholder="名称/条码" style="width: 240px" />
         <div>
-          <el-button @click="load">查询</el-button>
+          <el-button @click="onSearch">查询</el-button>
           <el-button type="primary" @click="openCreate" v-if="can('product:create')">新增商品</el-button>
         </div>
       </div>
@@ -32,6 +32,17 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-wrap">
+      <el-pagination
+        v-model:current-page="pageNum"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="load"
+        @current-change="load"
+      />
+    </div>
   </el-card>
 
   <!-- 新增/编辑商品弹窗 -->
@@ -59,12 +70,23 @@ import { usePermission } from '../composables/usePermission'
 
 const keyword = ref('')
 const list = ref([])
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(10)
 const visible = ref(false)
 const form = reactive({ id: null, name: '', barcode: '', categoryId: 1, purchasePrice: 1, salePrice: 1 })
 const { can } = usePermission()
 
 // 加载商品列表（支持关键字搜索）
-const load = async () => { list.value = await request.get('/products', { params: { keyword: keyword.value } }) }
+const load = async () => {
+  const page = await request.get('/products', { params: { keyword: keyword.value, pageNum: pageNum.value, pageSize: pageSize.value } })
+  list.value = page.records || []
+  total.value = page.total || 0
+}
+const onSearch = () => {
+  pageNum.value = 1
+  load()
+}
 //Object.assign()方法用于将所有可枚举的属性值从一个或多个源对象复制到目标对象。它将返回目标对象。
 //visible.value = true表示显示弹窗，false表示隐藏弹窗
 const openCreate = () => { Object.assign(form, { id: null, name: '', barcode: '', categoryId: 1, purchasePrice: 1, salePrice: 1 }); visible.value = true }
@@ -77,6 +99,7 @@ const save = async () => {
   else await request.post('/products', payload)
   ElMessage.success('保存成功')
   visible.value = false
+  pageNum.value = 1
   load()
 }
 const toggle = async (row) => {
@@ -89,6 +112,7 @@ const remove = async (id) => {
   await ElMessageBox.confirm('确认删除该商品吗？', '提示', { type: 'warning' })
   await request.delete(`/products/${id}`)
   ElMessage.success('删除成功')
+  pageNum.value = 1
   load()
 }
 
@@ -97,4 +121,5 @@ onMounted(load)
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; }
+.pagination-wrap { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>

@@ -46,9 +46,9 @@ public interface InventoryMapper {
             join product p on p.id = i.product_id
             where i.quantity <= i.warning_qty
             order by i.quantity asc, i.product_id asc
-            limit #{limit}
+            limit #{limit} offset #{offset}
             """)
-    List<InventoryWarningResponse> listWarnings(@Param("limit") int limit);
+    List<InventoryWarningResponse> listWarnings(@Param("limit") int limit, @Param("offset") int offset);
 
     @Select("select count(1) from inventory where quantity <= warning_qty")
     long countWarnings();
@@ -62,6 +62,14 @@ public interface InventoryMapper {
             limit #{limit} offset #{offset}
             """)
     List<InventoryInfoResponse> listInventory(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select("""
+            select count(1)
+            from inventory i
+            join product p on p.id = i.product_id
+            where (#{keyword} is null or p.name like concat('%', #{keyword}, '%') or cast(i.product_id as char) like concat('%', #{keyword}, '%'))
+            """)
+    long countInventory(@Param("keyword") String keyword);
 
     //查询库存流水，productId为空时查询所有，否则查询指定商品的流水
     @Select("""

@@ -2,9 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.common.ApiResponse;
 import com.example.demo.domain.dto.dashboard.DashboardOverviewResponse;
-import com.example.demo.domain.dto.dashboard.InventoryWarningResponse;
+import com.example.demo.domain.dto.dashboard.InventoryWarningPageResponse;
 import com.example.demo.service.DashboardService;
-import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,8 +29,9 @@ public class DashboardController {
 
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/inventory-warnings")
-    //返回库存警告列表，limit为限制数量
-    public ApiResponse<List<InventoryWarningResponse>> inventoryWarnings(@RequestParam(defaultValue = "20") int limit) {
-        return ApiResponse.success(dashboardService.inventoryWarnings(limit));
+    public ApiResponse<InventoryWarningPageResponse> inventoryWarnings(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return ApiResponse.success(dashboardService.inventoryWarnings(pageNum, pageSize));
     }
 }

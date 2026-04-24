@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.dto.dashboard.DashboardOverviewResponse;
+import com.example.demo.domain.dto.dashboard.InventoryWarningPageResponse;
 import com.example.demo.domain.dto.dashboard.InventoryWarningResponse;
 import com.example.demo.mapper.InventoryMapper;
 import com.example.demo.mapper.PurchaseOrderMapper;
@@ -41,10 +42,12 @@ public class DashboardService {
         return new DashboardOverviewResponse(salesAmount, salesOrders, purchaseAmount, purchaseOrders, lowStock);
     }
 
-    public List<InventoryWarningResponse> inventoryWarnings(int limit) {
-        //限制limit在1到200之间
-        int safeLimit = Math.min(Math.max(limit, 1), 200);
-        //查询库存警告列表
-        return inventoryMapper.listWarnings(safeLimit);
+    public InventoryWarningPageResponse inventoryWarnings(int pageNum, int pageSize) {
+        int safePageNum = Math.max(pageNum, 1);
+        int safePageSize = Math.min(Math.max(pageSize, 1), 100);
+        int offset = (safePageNum - 1) * safePageSize;
+        List<InventoryWarningResponse> records = inventoryMapper.listWarnings(safePageSize, offset);
+        long total = inventoryMapper.countWarnings();
+        return new InventoryWarningPageResponse(records, total);
     }
 }

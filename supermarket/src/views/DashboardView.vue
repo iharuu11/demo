@@ -21,6 +21,17 @@
       <el-table-column prop="quantity" label="当前库存" width="120" />
       <el-table-column prop="warningQty" label="预警值" width="120" />
     </el-table>
+    <div style="margin-top: 12px; display: flex; justify-content: flex-end">
+      <el-pagination
+        v-model:current-page="pageNum"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="loadWarnings"
+        @current-change="loadWarnings"
+      />
+    </div>
   </el-card>
 </template>
 
@@ -30,12 +41,22 @@ import request from '../utils/request'
 
 const overview = ref({})
 const warnings = ref([])
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(10)
+
+const loadWarnings = async () => {
+  const page = await request.get('/dashboard/inventory-warnings', {
+    params: { pageNum: pageNum.value, pageSize: pageSize.value },
+  })
+  warnings.value = page.records || []
+  total.value = page.total || 0
+}
 
 //onMounted生命周期钩子函数：组件挂载完成后执行一次
 onMounted(async () => {
   // 读取后端看板接口：今日概览 + 库存预警列表
   overview.value = await request.get('/dashboard/overview/today')
-  //params参数会被转换成查询字符串，例如?limit=20，后端可以通过@RequestParam获取，表示一次查询20条
-  warnings.value = await request.get('/dashboard/inventory-warnings', { params: { limit: 20 } })
+  await loadWarnings()
 })
 </script>

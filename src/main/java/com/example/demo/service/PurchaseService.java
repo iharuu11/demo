@@ -4,7 +4,9 @@ import com.example.demo.domain.dto.purchase.CreatePurchaseItemRequest;
 import com.example.demo.domain.dto.purchase.CreatePurchaseOrderRequest;
 import com.example.demo.domain.dto.purchase.CreateSupplierRequest;
 import com.example.demo.domain.dto.purchase.PurchaseOrderDetailResponse;
+import com.example.demo.domain.dto.purchase.PurchaseOrderPageResponse;
 import com.example.demo.domain.dto.purchase.PurchaseOrderSummaryResponse;
+import com.example.demo.domain.dto.purchase.SupplierPageResponse;
 import com.example.demo.domain.dto.purchase.SupplierSummaryResponse;
 import com.example.demo.domain.dto.purchase.UpdateSupplierRequest;
 import com.example.demo.domain.dto.purchase.UpdateSupplierStatusRequest;
@@ -59,16 +61,18 @@ public class PurchaseService {
         return supplierMapper.listAll();
     }
 
-    public List<SupplierSummaryResponse> listSuppliers(String keyword, int pageNum, int pageSize) {
+    public SupplierPageResponse listSuppliers(String keyword, int pageNum, int pageSize) {
         // 分页查询供应商（支持关键字）
         int safePageNum = Math.max(pageNum, 1);
         int safePageSize = Math.min(Math.max(pageSize, 1), 100);
         int offset = (safePageNum - 1) * safePageSize;
         String safeKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        return supplierMapper.listPaged(safeKeyword, safePageSize, offset).stream()
+        List<SupplierSummaryResponse> records = supplierMapper.listPaged(safeKeyword, safePageSize, offset).stream()
                 .map(s -> new SupplierSummaryResponse(
                         s.getId(), s.getName(), s.getContactName(), s.getContactPhone(), s.getAddress(), s.getStatus(), s.getCreatedAt()))
                 .toList();
+        long total = supplierMapper.countPaged(safeKeyword);
+        return new SupplierPageResponse(records, total);
     }
 
     @Transactional
@@ -182,7 +186,7 @@ public class PurchaseService {
         }
     }
 
-    public List<PurchaseOrderSummaryResponse> listOrders(
+    public PurchaseOrderPageResponse listOrders(
             Integer status, String orderNo, String startTime, String endTime, int pageNum, int pageSize) {
         // 分页查询采购单（状态/单号/时间区间筛选）
         int safePageNum = Math.max(pageNum, 1);
@@ -191,7 +195,9 @@ public class PurchaseService {
         String safeOrderNo = (orderNo == null || orderNo.isBlank()) ? null : orderNo.trim();
         String safeStartTime = (startTime == null || startTime.isBlank()) ? null : startTime.trim();
         String safeEndTime = (endTime == null || endTime.isBlank()) ? null : endTime.trim();
-        return purchaseOrderMapper.listOrders(status, safeOrderNo, safeStartTime, safeEndTime, safePageSize, offset);
+        List<PurchaseOrderSummaryResponse> records = purchaseOrderMapper.listOrders(status, safeOrderNo, safeStartTime, safeEndTime, safePageSize, offset);
+        long total = purchaseOrderMapper.countOrders(status, safeOrderNo, safeStartTime, safeEndTime);
+        return new PurchaseOrderPageResponse(records, total);
     }
 
     public PurchaseOrderDetailResponse orderDetail(Long id) {

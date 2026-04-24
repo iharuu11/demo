@@ -4,6 +4,7 @@ import com.example.demo.domain.dto.member.CreateMemberRequest;
 import com.example.demo.domain.dto.member.MemberBalanceLogPageResponse;
 import com.example.demo.domain.dto.member.MemberBalanceLogResponse;
 import com.example.demo.domain.dto.member.MemberLoginRequest;
+import com.example.demo.domain.dto.member.MemberPageResponse;
 import com.example.demo.domain.dto.member.MemberResponse;
 import com.example.demo.domain.dto.member.UpdateMemberRequest;
 import com.example.demo.domain.entity.Member;
@@ -60,7 +61,7 @@ public class MemberService {
         return toResponse(member);
     }
 
-    public List<MemberResponse> list(String keyword, int pageNum, int pageSize) {
+    public MemberPageResponse list(String keyword, int pageNum, int pageSize) {
         // 分页参数做“兜底修正”：
         // - pageNum 至少为 1
         // - pageSize 限制在 1~100，防止一次查询过大
@@ -70,7 +71,9 @@ public class MemberService {
         String safeKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
         //查询会员列表，stream().map(this::toResponse)将会员列表转换为MemberResponse列表
         //将每个查出来的member对象调用toResponse方法
-        return memberMapper.listMembers(safeKeyword, safePageSize, offset).stream().map(this::toResponse).toList();
+        List<MemberResponse> records = memberMapper.listMembers(safeKeyword, safePageSize, offset).stream().map(this::toResponse).toList();
+        long total = memberMapper.countMembers(safeKeyword);
+        return new MemberPageResponse(records, total);
     }
 
     public MemberBalanceLogPageResponse listBalanceLogs(String keyword, String bizType, int pageNum, int pageSize) {

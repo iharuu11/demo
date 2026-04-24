@@ -8,7 +8,9 @@ import com.example.demo.domain.dto.product.CreateProductRequest;
 import com.example.demo.domain.dto.product.InventoryInfoResponse;
 import com.example.demo.domain.dto.product.InventoryLogPageResponse;
 import com.example.demo.domain.dto.product.InventoryLogResponse;
+import com.example.demo.domain.dto.product.InventoryPageResponse;
 import com.example.demo.domain.dto.product.ProductResponse;
+import com.example.demo.domain.dto.product.ProductPageResponse;
 import com.example.demo.domain.dto.product.UpdateCategoryRequest;
 import com.example.demo.domain.dto.product.UpdateProductRequest;
 import com.example.demo.domain.dto.product.UpdateProductStatusRequest;
@@ -81,7 +83,7 @@ public class ProductController {
 
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping
-    public ApiResponse<List<ProductResponse>> listProducts(
+    public ApiResponse<ProductPageResponse> listProducts(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
@@ -130,7 +132,7 @@ public class ProductController {
 
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/inventory")
-    public ApiResponse<List<InventoryInfoResponse>> listInventory(
+    public ApiResponse<InventoryPageResponse> listInventory(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {

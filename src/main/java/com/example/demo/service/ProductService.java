@@ -7,7 +7,9 @@ import com.example.demo.domain.dto.product.CreateProductRequest;
 import com.example.demo.domain.dto.product.InventoryInfoResponse;
 import com.example.demo.domain.dto.product.InventoryLogPageResponse;
 import com.example.demo.domain.dto.product.InventoryLogResponse;
+import com.example.demo.domain.dto.product.InventoryPageResponse;
 import com.example.demo.domain.dto.product.ProductResponse;
+import com.example.demo.domain.dto.product.ProductPageResponse;
 import com.example.demo.domain.dto.product.UpdateCategoryRequest;
 import com.example.demo.domain.dto.product.UpdateProductRequest;
 import com.example.demo.domain.dto.product.UpdateProductStatusRequest;
@@ -74,14 +76,14 @@ public class ProductService {
         return product.getId();
     }
 
-    public List<ProductResponse> listProducts(String keyword, int pageNum, int pageSize) {
+    public ProductPageResponse listProducts(String keyword, int pageNum, int pageSize) {
         // 分页参数做安全处理，防止一次查询过大
         int safePageNum = Math.max(pageNum, 1);
         int safePageSize = Math.min(Math.max(pageSize, 1), 100);
         int offset = (safePageNum - 1) * safePageSize;
         // keyword 为空/全空格就当作不筛选，trim()用于去除字符串两端的空格
         String safeKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        return productMapper.list(safeKeyword, safePageSize, offset).stream().map(p -> {
+        List<ProductResponse> records = productMapper.list(safeKeyword, safePageSize, offset).stream().map(p -> {
             // 商品列表要带上当前库存数量，方便前端直接展示
             Inventory inventory = inventoryMapper.findByProductId(p.getId());
             //如果inventory为null，则qty为0，否则为inventory的quantity
@@ -90,6 +92,8 @@ public class ProductService {
                     p.getId(), p.getName(), p.getBarcode(), p.getCategoryId(),
                     p.getPurchasePrice(), p.getSalePrice(), p.getStatus(), qty);
         }).toList();
+        long total = productMapper.count(safeKeyword);
+        return new ProductPageResponse(records, total);
     }
 
     public List<CategoryResponse> listCategories() {
@@ -194,13 +198,15 @@ public class ProductService {
         inventoryMapper.insertLog(productId, request.deltaQty(), afterQty, request.bizType(), request.remark(), operatorName);
     }
 
-    public List<InventoryInfoResponse> listInventory(String keyword, int pageNum, int pageSize) {
+    public InventoryPageResponse listInventory(String keyword, int pageNum, int pageSize) {
         // 库存列表分页查询（用于库存管理页）
         int safePageNum = Math.max(pageNum, 1);
         int safePageSize = Math.min(Math.max(pageSize, 1), 100);
         int offset = (safePageNum - 1) * safePageSize;
         String safeKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        return inventoryMapper.listInventory(safeKeyword, safePageSize, offset);
+        List<InventoryInfoResponse> records = inventoryMapper.listInventory(safeKeyword, safePageSize, offset);
+        long total = inventoryMapper.countInventory(safeKeyword);
+        return new InventoryPageResponse(records, total);
     }
 
     public InventoryLogPageResponse listInventoryLogs(Long productId, int pageNum, int pageSize) {

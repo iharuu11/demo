@@ -10,7 +10,7 @@
             <el-option :value="2" label="已取消" />
           </el-select>
           <el-input v-model="orderNo" placeholder="采购单号" style="width: 220px" />
-          <el-button @click="loadOrders">查询</el-button>
+          <el-button @click="onSearch">查询</el-button>
         </div>
         <el-button type="primary" @click="visible=true" v-if="can('purchase:order:create')">新建采购单</el-button>
       </div>
@@ -35,6 +35,17 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-wrap">
+      <el-pagination
+        v-model:current-page="pageNum"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="loadOrders"
+        @current-change="loadOrders"
+      />
+    </div>
   </el-card>
 
   <el-dialog v-model="visible" title="新建采购单" width="700px">
@@ -113,6 +124,9 @@ import { usePermission } from '../composables/usePermission'
 const orders = ref([])
 const status = ref(null)
 const orderNo = ref('')
+const pageNum = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 const visible = ref(false)
 const supplierOptions = ref([])
 const productOptions = ref([])
@@ -124,7 +138,15 @@ const { can } = usePermission()
 
 // 加载采购单列表
 const loadOrders = async () => {
-  orders.value = await request.get('/purchases/orders', { params: { status: status.value, orderNo: orderNo.value } })
+  const page = await request.get('/purchases/orders', {
+    params: { status: status.value, orderNo: orderNo.value, pageNum: pageNum.value, pageSize: pageSize.value },
+  })
+  orders.value = page.records || []
+  total.value = page.total || 0
+}
+const onSearch = () => {
+  pageNum.value = 1
+  loadOrders()
 }
 
 // 加载供应商选项（仅展示启用状态）
@@ -138,7 +160,8 @@ const loadSuppliers = async () => {
 
 // 加载商品选项（仅展示上架状态）
 const loadProducts = async () => {
-  const products = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
+  const page = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
+  const products = page.records || []
   productOptions.value = (products || []).filter((item) => item.status === 1)
   if (productOptions.value.length > 0) {
     for (const item of form.items) {
@@ -190,6 +213,7 @@ const create = async () => {
 
   visible.value = false
   ElMessage.success('创建成功')
+  pageNum.value = 1
   form.supplierId = supplierOptions.value[0]?.id || null
   form.items = [{ productId: productOptions.value[0]?.id || null, quantity: 1, unitPrice: 1 }]
   loadOrders()
@@ -240,6 +264,7 @@ onMounted(async () => {
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; }
+.pagination-wrap { margin-top: 12px; display: flex; justify-content: flex-end; }
 .purchase-items-wrap { width: 100%; }
 .purchase-item-head { display: grid; grid-template-columns: 280px 82px 100px 70px; gap: 10px; margin-bottom: 6px; color: #909399; font-size: 12px; }
 .purchase-item-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }

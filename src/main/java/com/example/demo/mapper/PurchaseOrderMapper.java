@@ -60,6 +60,19 @@ public interface PurchaseOrderMapper {
                                                   @Param("limit") int limit,
                                                   @Param("offset") int offset);
 
+    @Select("""
+            select count(1)
+            from purchase_order po
+            where (#{status} is null or po.status = #{status})
+              and (#{orderNo} is null or po.order_no like concat('%', #{orderNo}, '%'))
+              and (#{startTime} is null or po.created_at >= #{startTime})
+              and (#{endTime} is null or po.created_at <= #{endTime})
+            """)
+    long countOrders(@Param("status") Integer status,
+                     @Param("orderNo") String orderNo,
+                     @Param("startTime") String startTime,
+                     @Param("endTime") String endTime);
+
     @Update("update purchase_order set status = #{status}, audited_at = now() where id = #{id} and status = #{expectedStatus}")
     int updateStatus(@Param("id") Long id, @Param("expectedStatus") Integer expectedStatus, @Param("status") Integer status);
 

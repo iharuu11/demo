@@ -161,7 +161,8 @@ const memberStore = useMemberStore()
 const currentMember = computed(() => memberStore.currentMember)
 
 const loadProducts = async () => {
-  const products = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
+  const page = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
+  const products = page.records || []
   productOptions.value = (products || []).filter((item) => item.status === 1)
   if (productOptions.value.length > 0) {
     for (const item of form.items) {

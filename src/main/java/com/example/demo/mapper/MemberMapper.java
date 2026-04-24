@@ -118,6 +118,12 @@ public interface MemberMapper {
             """)
     long countBalanceLogs(@Param("keyword") String keyword, @Param("bizType") String bizType);
 
-    @Select("select count(1) from member")
-    long countMembers();
+    @Select("""
+            select count(1)
+            from member
+            where (#{keyword} is null
+                or phone like concat('%', #{keyword}, '%')
+                or name like concat('%', #{keyword}, '%'))
+            """)
+    long countMembers(@Param("keyword") String keyword);
 }

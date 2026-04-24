@@ -3,7 +3,7 @@
     <template #header>
       <div class="toolbar">
         <el-input v-model="keyword" placeholder="商品关键字" style="width: 240px" />
-        <el-button @click="load">查询</el-button>
+        <el-button @click="onSearch">查询</el-button>
       </div>
     </template>
     <el-table :data="list">
@@ -20,6 +20,17 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-wrap">
+      <el-pagination
+        v-model:current-page="pageNum"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="load"
+        @current-change="load"
+      />
+    </div>
   </el-card>
 </template>
 
@@ -31,11 +42,22 @@ import { usePermission } from '../composables/usePermission'
 
 const keyword = ref('')
 const list = ref([])
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(10)
 const { can } = usePermission()
 // 加载库存列表：
 // - keyword：按商品关键字模糊搜索
 // - 接口返回：商品 + 当前库存数量 + 预警值
-const load = async () => { list.value = await request.get('/products/inventory', { params: { keyword: keyword.value } }) }
+const load = async () => {
+  const page = await request.get('/products/inventory', { params: { keyword: keyword.value, pageNum: pageNum.value, pageSize: pageSize.value } })
+  list.value = page.records || []
+  total.value = page.total || 0
+}
+const onSearch = () => {
+  pageNum.value = 1
+  load()
+}
 
 const adjustPrompt = async (row) => {
   // 手动调整库存（前端输入任意整数）：
@@ -71,4 +93,5 @@ onMounted(load)
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; }
+.pagination-wrap { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>

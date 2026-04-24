@@ -41,6 +41,18 @@ public interface SupplierMapper {
             """)
     List<Supplier> listPaged(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
 
+    @Select("""
+            select count(1)
+            from supplier
+            where (
+              #{keyword} is null
+              or name like concat('%', #{keyword}, '%')
+              or contact_name like concat('%', #{keyword}, '%')
+              or contact_phone like concat('%', #{keyword}, '%')
+            )
+            """)
+    long countPaged(@Param("keyword") String keyword);
+
     @Update("""
             update supplier
             set name = #{name}, contact_name = #{contactName}, contact_phone = #{contactPhone}, address = #{address}

@@ -37,6 +37,13 @@ public interface ProductMapper {
             """)
     List<Product> list(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
 
+    @Select("""
+            select count(1)
+            from product
+            where (#{keyword} is null or name like concat('%', #{keyword}, '%') or barcode like concat('%', #{keyword}, '%'))
+            """)
+    long count(@Param("keyword") String keyword);
+
     @Update("""
             update product
             set name = #{name}, barcode = #{barcode}, category_id = #{categoryId},

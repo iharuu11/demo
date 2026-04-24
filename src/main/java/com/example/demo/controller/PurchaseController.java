@@ -4,7 +4,9 @@ import com.example.demo.common.ApiResponse;
 import com.example.demo.domain.dto.purchase.CreatePurchaseOrderRequest;
 import com.example.demo.domain.dto.purchase.CreateSupplierRequest;
 import com.example.demo.domain.dto.purchase.PurchaseOrderDetailResponse;
+import com.example.demo.domain.dto.purchase.PurchaseOrderPageResponse;
 import com.example.demo.domain.dto.purchase.PurchaseOrderSummaryResponse;
+import com.example.demo.domain.dto.purchase.SupplierPageResponse;
 import com.example.demo.domain.dto.purchase.SupplierSummaryResponse;
 import com.example.demo.domain.dto.purchase.UpdateSupplierRequest;
 import com.example.demo.domain.dto.purchase.UpdateSupplierStatusRequest;
@@ -49,7 +51,7 @@ public class PurchaseController {
 
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/suppliers/page")
-    public ApiResponse<List<SupplierSummaryResponse>> listSuppliersPaged(
+    public ApiResponse<SupplierPageResponse> listSuppliersPaged(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
@@ -82,7 +84,7 @@ public class PurchaseController {
 
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/orders")
-    public ApiResponse<List<PurchaseOrderSummaryResponse>> listOrders(
+    public ApiResponse<PurchaseOrderPageResponse> listOrders(
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String orderNo,
             @RequestParam(required = false) String startTime,

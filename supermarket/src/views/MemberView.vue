@@ -4,7 +4,7 @@
       <div class="toolbar">
         <el-input v-model="keyword" placeholder="手机号/姓名" style="width: 240px" />
         <div>
-          <el-button @click="load">查询</el-button>
+          <el-button @click="onSearch">查询</el-button>
           <el-button type="primary" @click="openCreate">会员注册</el-button>
         </div>
       </div>
@@ -32,6 +32,17 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-wrap">
+      <el-pagination
+        v-model:current-page="pageNum"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="load"
+        @current-change="load"
+      />
+    </div>
   </el-card>
 
   <el-dialog v-model="createVisible" title="会员注册" width="520px">
@@ -82,6 +93,9 @@ import request from '../utils/request'
 
 const keyword = ref('')
 const list = ref([])
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(10)
 
 const createVisible = ref(false)
 const editVisible = ref(false)
@@ -95,7 +109,13 @@ const genderText = (gender) => {
 }
 
 const load = async () => {
-  list.value = await request.get('/members', { params: { keyword: keyword.value, pageNum: 1, pageSize: 100 } })
+  const page = await request.get('/members', { params: { keyword: keyword.value, pageNum: pageNum.value, pageSize: pageSize.value } })
+  list.value = page.records || []
+  total.value = page.total || 0
+}
+const onSearch = () => {
+  pageNum.value = 1
+  load()
 }
 
 const openCreate = () => {
@@ -107,6 +127,7 @@ const createMember = async () => {
   await request.post('/members/register', createForm)
   ElMessage.success('会员注册成功')
   createVisible.value = false
+  pageNum.value = 1
   load()
 }
 
@@ -148,4 +169,5 @@ onMounted(load)
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; }
+.pagination-wrap { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>

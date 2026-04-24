@@ -4,6 +4,7 @@ import com.example.demo.common.ApiResponse;
 import com.example.demo.domain.dto.member.MemberBalanceLogPageResponse;
 import com.example.demo.domain.dto.member.CreateMemberRequest;
 import com.example.demo.domain.dto.member.MemberLoginRequest;
+import com.example.demo.domain.dto.member.MemberPageResponse;
 import com.example.demo.domain.dto.member.MemberResponse;
 import com.example.demo.domain.dto.member.UpdateMemberRequest;
 import com.example.demo.service.MemberService;
@@ -52,7 +53,7 @@ public class MemberController {
 
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping
-    public ApiResponse<List<MemberResponse>> list(
+    public ApiResponse<MemberPageResponse> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
