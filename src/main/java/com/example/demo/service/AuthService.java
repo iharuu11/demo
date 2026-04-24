@@ -51,7 +51,7 @@ public class AuthService {
         user.setUsername(request.username());
         //加密密码
         user.setPassword(passwordEncoder.encode(request.password()));
-        user.setRole("STAFF");
+        user.setRole("TOURIST");
         user.setStatus(1);
         userMapper.insert(user);
 

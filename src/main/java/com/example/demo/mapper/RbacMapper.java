@@ -32,9 +32,17 @@ public interface RbacMapper {
     //按编码查询角色
     @Select("select id, code, name, status, created_at from sys_role where code = #{code} limit 1")
     Role findRoleByCode(String code);
+    @Select("select id, code, name, status, created_at from sys_role order by id asc")
+    List<Role> listRoles();
+    @Select("select id, code, name, type, created_at from sys_permission order by id asc")
+    List<Permission> listPermissions();
+    @Select("select permission_id from sys_role_permission where role_id = #{roleId}")
+    List<Long> listRolePermissionIds(Long roleId);
     //插入角色权限
     @Insert("insert ignore into sys_role_permission(role_id, permission_id) values(#{roleId}, #{permissionId})")
     int assignPermissionToRole(@Param("roleId") Long roleId, @Param("permissionId") Long permissionId);
+    @Delete("delete from sys_role_permission where role_id = #{roleId}")
+    int deleteRolePermissions(Long roleId);
     //删除用户角色
     @Delete("delete from sys_user_role where user_id = #{userId}")
     int deleteUserRoles(Long userId);

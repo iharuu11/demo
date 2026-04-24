@@ -1,14 +1,20 @@
 package com.example.demo.controller;
 
 import com.example.demo.common.ApiResponse;
+import com.example.demo.domain.dto.rbac.AssignRolePermissionsRequest;
 import com.example.demo.domain.dto.rbac.AssignUserRoleRequest;
 import com.example.demo.domain.dto.rbac.CreatePermissionRequest;
 import com.example.demo.domain.dto.rbac.CreateRoleRequest;
+import com.example.demo.domain.entity.Permission;
+import com.example.demo.domain.entity.Role;
 import com.example.demo.service.RbacService;
 import jakarta.validation.Valid;
+import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,6 +28,21 @@ public class RbacController {
 
     public RbacController(RbacService rbacService) {
         this.rbacService = rbacService;
+    }
+
+    @GetMapping("/roles")
+    public ApiResponse<List<Role>> listRoles() {
+        return ApiResponse.success(rbacService.listRoles());
+    }
+
+    @GetMapping("/permissions")
+    public ApiResponse<List<Permission>> listPermissions() {
+        return ApiResponse.success(rbacService.listPermissions());
+    }
+
+    @GetMapping("/roles/{roleId}/permissions")
+    public ApiResponse<List<Long>> listRolePermissions(@PathVariable Long roleId) {
+        return ApiResponse.success(rbacService.listRolePermissionIds(roleId));
     }
 
     @PostMapping("/roles")
@@ -42,6 +63,14 @@ public class RbacController {
             @PathVariable Long roleId,
             @PathVariable Long permissionId) {
         rbacService.assignPermissionToRole(roleId, permissionId);
+        return ApiResponse.success();
+    }
+
+    @PutMapping("/roles/{roleId}/permissions")
+    public ApiResponse<Void> assignPermissions(
+            @PathVariable Long roleId,
+            @Valid @RequestBody AssignRolePermissionsRequest request) {
+        rbacService.assignPermissionsToRole(roleId, request.permissionIds());
         return ApiResponse.success();
     }
 

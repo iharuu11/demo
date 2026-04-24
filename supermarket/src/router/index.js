@@ -23,6 +23,7 @@ const routes = [
       { path: 'inventory-logs', name: 'inventory-logs', component: () => import('../views/InventoryLogView.vue') },
       { path: 'members', name: 'members', component: () => import('../views/MemberView.vue') },
       { path: 'member-balance-logs', name: 'member-balance-logs', component: () => import('../views/MemberBalanceLogView.vue') },
+      { path: 'permission-assign', name: 'permission-assign', component: () => import('../views/PermissionAssignView.vue'), meta: { adminOnly: true } },
       { path: 'purchases', name: 'purchases', component: () => import('../views/PurchaseView.vue') },
       { path: 'suppliers', name: 'suppliers', component: () => import('../views/SupplierView.vue') },
       { path: 'sales', name: 'sales', component: () => import('../views/SalesView.vue') },
@@ -56,6 +57,7 @@ router.beforeEach(async (to) => {
       return '/login'
     }
   }
+  if (to.meta.adminOnly && auth.role !== 'ADMIN') return '/dashboard'
   return true
 })
 

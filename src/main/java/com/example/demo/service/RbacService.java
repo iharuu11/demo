@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.Role;
 import com.example.demo.domain.entity.User;
 import com.example.demo.mapper.RbacMapper;
 import com.example.demo.mapper.UserMapper;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +43,21 @@ public class RbacService {
         return permission.getId();
     }
 
+    public List<Role> listRoles() {
+        return rbacMapper.listRoles();
+    }
+
+    public List<Permission> listPermissions() {
+        return rbacMapper.listPermissions();
+    }
+
+    public List<Long> listRolePermissionIds(Long roleId) {
+        if (rbacMapper.findRoleById(roleId) == null) {
+            throw new IllegalArgumentException("role not found");
+        }
+        return rbacMapper.listRolePermissionIds(roleId);
+    }
+
     @Transactional
     public void assignPermissionToRole(Long roleId, Long permissionId) {
         if (rbacMapper.findRoleById(roleId) == null) {
@@ -51,6 +67,23 @@ public class RbacService {
             throw new IllegalArgumentException("permission not found");
         }
         rbacMapper.assignPermissionToRole(roleId, permissionId);
+    }
+
+    @Transactional
+    public void assignPermissionsToRole(Long roleId, List<Long> permissionIds) {
+        if (rbacMapper.findRoleById(roleId) == null) {
+            throw new IllegalArgumentException("role not found");
+        }
+        rbacMapper.deleteRolePermissions(roleId);
+        if (permissionIds == null || permissionIds.isEmpty()) {
+            return;
+        }
+        for (Long permissionId : permissionIds) {
+            if (permissionId == null || rbacMapper.findPermissionById(permissionId) == null) {
+                throw new IllegalArgumentException("permission not found: " + permissionId);
+            }
+            rbacMapper.assignPermissionToRole(roleId, permissionId);
+        }
     }
 
     @Transactional
