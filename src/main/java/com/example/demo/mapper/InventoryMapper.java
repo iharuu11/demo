@@ -58,18 +58,20 @@ public interface InventoryMapper {
             from inventory i
             join product p on p.id = i.product_id
             where (#{keyword} is null or p.name like concat('%', #{keyword}, '%') or cast(i.product_id as char) like concat('%', #{keyword}, '%'))
+              and (#{categoryId} is null or p.category_id = #{categoryId})
             order by i.product_id desc
             limit #{limit} offset #{offset}
             """)
-    List<InventoryInfoResponse> listInventory(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
+    List<InventoryInfoResponse> listInventory(@Param("keyword") String keyword, @Param("categoryId") Long categoryId, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select("""
             select count(1)
             from inventory i
             join product p on p.id = i.product_id
             where (#{keyword} is null or p.name like concat('%', #{keyword}, '%') or cast(i.product_id as char) like concat('%', #{keyword}, '%'))
+              and (#{categoryId} is null or p.category_id = #{categoryId})
             """)
-    long countInventory(@Param("keyword") String keyword);
+    long countInventory(@Param("keyword") String keyword, @Param("categoryId") Long categoryId);
 
     //查询库存流水，productId为空时查询所有，否则查询指定商品的流水
     @Select("""

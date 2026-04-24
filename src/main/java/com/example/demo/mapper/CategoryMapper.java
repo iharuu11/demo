@@ -12,21 +12,21 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface CategoryMapper {
     @Insert("""
-            insert into category(name, parent_id, sort, status, created_at)
-            values(#{name}, #{parentId}, #{sort}, #{status}, now())
+            insert into category(name, status, created_at)
+            values(#{name}, #{status}, now())
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Category category);
 
-    @Select("select id, name, parent_id, sort, status, created_at from category order by sort asc, id desc")
+    @Select("select id, name, status, created_at from category order by id desc")
     List<Category> listAll();
 
-    @Select("select id, name, parent_id, sort, status, created_at from category where id = #{id} limit 1")
+    @Select("select id, name, status, created_at from category where id = #{id} limit 1")
     Category findById(Long id);
 
     @Update("""
             update category
-            set name = #{name}, parent_id = #{parentId}, sort = #{sort}, status = #{status}
+            set name = #{name}, status = #{status}
             where id = #{id}
             """)
     int update(Category category);

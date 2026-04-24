@@ -32,17 +32,19 @@ public interface ProductMapper {
             select id, name, barcode, category_id, purchase_price, sale_price, status, created_at
             from product
             where (#{keyword} is null or name like concat('%', #{keyword}, '%') or barcode like concat('%', #{keyword}, '%'))
+              and (#{categoryId} is null or category_id = #{categoryId})
             order by id desc
             limit #{limit} offset #{offset}
             """)
-    List<Product> list(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
+    List<Product> list(@Param("keyword") String keyword, @Param("categoryId") Long categoryId, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select("""
             select count(1)
             from product
             where (#{keyword} is null or name like concat('%', #{keyword}, '%') or barcode like concat('%', #{keyword}, '%'))
+              and (#{categoryId} is null or category_id = #{categoryId})
             """)
-    long count(@Param("keyword") String keyword);
+    long count(@Param("keyword") String keyword, @Param("categoryId") Long categoryId);
 
     @Update("""
             update product

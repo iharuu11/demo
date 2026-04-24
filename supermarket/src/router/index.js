@@ -18,6 +18,7 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue') },
       { path: 'products', name: 'products', component: () => import('../views/ProductView.vue') },
+      { path: 'categories', name: 'categories', component: () => import('../views/CategoryView.vue') },
       { path: 'inventory', name: 'inventory', component: () => import('../views/InventoryView.vue') },
       { path: 'inventory-logs', name: 'inventory-logs', component: () => import('../views/InventoryLogView.vue') },
       { path: 'members', name: 'members', component: () => import('../views/MemberView.vue') },

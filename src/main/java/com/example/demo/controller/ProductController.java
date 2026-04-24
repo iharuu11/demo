@@ -85,11 +85,12 @@ public class ProductController {
     @GetMapping
     public ApiResponse<ProductPageResponse> listProducts(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
         // 分页查询商品：
         // - keyword：按商品名/条码等搜索（具体在 mapper 里实现）
-        return ApiResponse.success(productService.listProducts(keyword, pageNum, pageSize));
+        return ApiResponse.success(productService.listProducts(keyword, categoryId, pageNum, pageSize));
     }
 
     @PreAuthorize("hasAuthority('product:update')")
@@ -134,10 +135,11 @@ public class ProductController {
     @GetMapping("/inventory")
     public ApiResponse<InventoryPageResponse> listInventory(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
         // 库存列表（用于前端“库存管理”页展示）
-        return ApiResponse.success(productService.listInventory(keyword, pageNum, pageSize));
+        return ApiResponse.success(productService.listInventory(keyword, categoryId, pageNum, pageSize));
     }
 
     @PreAuthorize("hasAuthority('inventory:warning:update')")

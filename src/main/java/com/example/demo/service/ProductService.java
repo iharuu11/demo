@@ -39,11 +39,9 @@ public class ProductService {
     @Transactional
     public Long createCategory(CreateCategoryRequest request) {
         // 创建分类（写库，使用事务）：
-        // parentId/sort/status 如果前端不传，就给默认值，避免数据库出现 null
+        // status 如果前端不传，就给默认值，避免数据库出现 null
         Category category = new Category();
         category.setName(request.name());
-        category.setParentId(request.parentId() == null ? 0L : request.parentId());
-        category.setSort(request.sort() == null ? 0 : request.sort());
         category.setStatus(1);
         categoryMapper.insert(category);
         return category.getId();
@@ -76,14 +74,14 @@ public class ProductService {
         return product.getId();
     }
 
-    public ProductPageResponse listProducts(String keyword, int pageNum, int pageSize) {
+    public ProductPageResponse listProducts(String keyword, Long categoryId, int pageNum, int pageSize) {
         // 分页参数做安全处理，防止一次查询过大
         int safePageNum = Math.max(pageNum, 1);
         int safePageSize = Math.min(Math.max(pageSize, 1), 100);
         int offset = (safePageNum - 1) * safePageSize;
         // keyword 为空/全空格就当作不筛选，trim()用于去除字符串两端的空格
         String safeKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        List<ProductResponse> records = productMapper.list(safeKeyword, safePageSize, offset).stream().map(p -> {
+        List<ProductResponse> records = productMapper.list(safeKeyword, categoryId, safePageSize, offset).stream().map(p -> {
             // 商品列表要带上当前库存数量，方便前端直接展示
             Inventory inventory = inventoryMapper.findByProductId(p.getId());
             //如果inventory为null，则qty为0，否则为inventory的quantity
@@ -92,14 +90,14 @@ public class ProductService {
                     p.getId(), p.getName(), p.getBarcode(), p.getCategoryId(),
                     p.getPurchasePrice(), p.getSalePrice(), p.getStatus(), qty);
         }).toList();
-        long total = productMapper.count(safeKeyword);
+        long total = productMapper.count(safeKeyword, categoryId);
         return new ProductPageResponse(records, total);
     }
 
     public List<CategoryResponse> listCategories() {
         // 分类列表：Entity -> DTO
         return categoryMapper.listAll().stream()
-                .map(c -> new CategoryResponse(c.getId(), c.getName(), c.getParentId(), c.getSort(), c.getStatus()))
+                .map(c -> new CategoryResponse(c.getId(), c.getName(), c.getStatus()))
                 .toList();
     }
 
@@ -111,8 +109,6 @@ public class ProductService {
             throw new IllegalArgumentException("category not found");
         }
         category.setName(request.name());
-        category.setParentId(request.parentId());
-        category.setSort(request.sort());
         category.setStatus(request.status());
         categoryMapper.update(category);
     }
@@ -198,14 +194,14 @@ public class ProductService {
         inventoryMapper.insertLog(productId, request.deltaQty(), afterQty, request.bizType(), request.remark(), operatorName);
     }
 
-    public InventoryPageResponse listInventory(String keyword, int pageNum, int pageSize) {
+    public InventoryPageResponse listInventory(String keyword, Long categoryId, int pageNum, int pageSize) {
         // 库存列表分页查询（用于库存管理页）
         int safePageNum = Math.max(pageNum, 1);
         int safePageSize = Math.min(Math.max(pageSize, 1), 100);
         int offset = (safePageNum - 1) * safePageSize;
         String safeKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        List<InventoryInfoResponse> records = inventoryMapper.listInventory(safeKeyword, safePageSize, offset);
-        long total = inventoryMapper.countInventory(safeKeyword);
+        List<InventoryInfoResponse> records = inventoryMapper.listInventory(safeKeyword, categoryId, safePageSize, offset);
+        long total = inventoryMapper.countInventory(safeKeyword, categoryId);
         return new InventoryPageResponse(records, total);
     }
 

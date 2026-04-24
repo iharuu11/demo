@@ -2,7 +2,17 @@
   <el-card>
     <template #header>
       <div class="toolbar">
-        <el-input v-model="keyword" placeholder="商品关键字" style="width: 240px" />
+        <div class="search-row">
+          <el-input v-model="keyword" placeholder="商品关键字" style="width: 240px" />
+          <el-select v-model="categoryId" placeholder="全部分类" clearable style="width: 180px">
+            <el-option
+              v-for="item in categoryOptions"
+              :key="item.id"
+              :value="item.id"
+              :label="item.name"
+            />
+          </el-select>
+        </div>
         <el-button @click="onSearch">查询</el-button>
       </div>
     </template>
@@ -41,6 +51,8 @@ import request from '../utils/request'
 import { usePermission } from '../composables/usePermission'
 
 const keyword = ref('')
+const categoryId = ref(null)
+const categoryOptions = ref([])
 const list = ref([])
 const total = ref(0)
 const pageNum = ref(1)
@@ -50,9 +62,14 @@ const { can } = usePermission()
 // - keyword：按商品关键字模糊搜索
 // - 接口返回：商品 + 当前库存数量 + 预警值
 const load = async () => {
-  const page = await request.get('/products/inventory', { params: { keyword: keyword.value, pageNum: pageNum.value, pageSize: pageSize.value } })
+  const page = await request.get('/products/inventory', {
+    params: { keyword: keyword.value, categoryId: categoryId.value, pageNum: pageNum.value, pageSize: pageSize.value },
+  })
   list.value = page.records || []
   total.value = page.total || 0
+}
+const loadCategories = async () => {
+  categoryOptions.value = await request.get('/products/categories')
 }
 const onSearch = () => {
   pageNum.value = 1
@@ -88,10 +105,14 @@ const setWarning = async (row) => {
 }
 
 // 页面打开时自动加载一次
-onMounted(load)
+onMounted(async () => {
+  await loadCategories()
+  await load()
+})
 </script>
 
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; }
+.search-row { display: flex; gap: 8px; }
 .pagination-wrap { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>

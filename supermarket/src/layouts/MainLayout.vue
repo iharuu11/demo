@@ -9,6 +9,7 @@
       <el-menu :default-active="$route.path" router class="menu">
         <el-menu-item index="/dashboard">运营看板</el-menu-item>
         <el-menu-item index="/products" v-if="can('product:create') || can('product:update') || can('product:delete')">商品管理</el-menu-item>
+        <el-menu-item index="/categories" v-if="can('product:category:create') || can('product:category:update') || can('product:category:delete')">商品分类</el-menu-item>
         <el-menu-item index="/inventory" v-if="can('inventory:adjust') || can('inventory:warning:update')">库存管理</el-menu-item>
         <el-menu-item index="/inventory-logs" v-if="can('inventory:adjust') || can('inventory:warning:update')">库存流水</el-menu-item>
         <el-menu-item index="/members">会员管理</el-menu-item>

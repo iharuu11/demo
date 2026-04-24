@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record UpdateCategoryRequest(
         @NotBlank(message = "name is required") String name,
-        @NotNull(message = "parentId is required") Long parentId,
-        @NotNull(message = "sort is required") Integer sort,
         @NotNull(message = "status is required") Integer status
 ) {
 }
