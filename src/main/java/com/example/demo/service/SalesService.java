@@ -6,14 +6,17 @@ import com.example.demo.domain.dto.sales.HotProductResponse;
 import com.example.demo.domain.dto.sales.RefundSalesOrderRequest;
 import com.example.demo.domain.dto.sales.SalesRefundResponse;
 import com.example.demo.domain.dto.sales.SalesOrderDetailResponse;
+import com.example.demo.domain.dto.sales.SalesOrderPageResponse;
 import com.example.demo.domain.dto.sales.SalesOrderSummaryResponse;
 import com.example.demo.domain.dto.sales.SalesOverviewResponse;
 import com.example.demo.domain.entity.Inventory;
+import com.example.demo.domain.entity.Member;
 import com.example.demo.domain.entity.Product;
 import com.example.demo.domain.entity.SalesOrder;
 import com.example.demo.domain.entity.SalesOrderItem;
 import com.example.demo.domain.entity.SalesRefund;
 import com.example.demo.mapper.InventoryMapper;
+import com.example.demo.mapper.MemberMapper;
 import com.example.demo.mapper.ProductMapper;
 import com.example.demo.mapper.SalesOrderMapper;
 import java.math.BigDecimal;
@@ -30,11 +33,16 @@ public class SalesService {
     private final ProductMapper productMapper;
     private final InventoryMapper inventoryMapper;
     private final SalesOrderMapper salesOrderMapper;
+    private final MemberMapper memberMapper;
 
-    public SalesService(ProductMapper productMapper, InventoryMapper inventoryMapper, SalesOrderMapper salesOrderMapper) {
+    public SalesService(ProductMapper productMapper,
+                        InventoryMapper inventoryMapper,
+                        SalesOrderMapper salesOrderMapper,
+                        MemberMapper memberMapper) {
         this.productMapper = productMapper;
         this.inventoryMapper = inventoryMapper;
         this.salesOrderMapper = salesOrderMapper;
+        this.memberMapper = memberMapper;
     }
 
     @Transactional
@@ -56,16 +64,50 @@ public class SalesService {
             totalAmount = totalAmount.add(product.getSalePrice().multiply(BigDecimal.valueOf(item.quantity())));
         }
 
+        Member member = null;
+        BigDecimal paidAmount = totalAmount;
+        if (request.memberId() != null) {
+            member = memberMapper.findById(request.memberId());
+            if (member == null) {
+                throw new IllegalArgumentException("member not found");
+            }
+            if (member.getStatus() == null || member.getStatus() != 1) {
+                throw new IllegalArgumentException("member is disabled");
+            }
+            // 会员下单享受 9 折
+            paidAmount = totalAmount.multiply(BigDecimal.valueOf(0.9)).setScale(2, RoundingMode.HALF_UP);
+            if (member.getBalance().compareTo(paidAmount) < 0) {
+                throw new IllegalArgumentException("member balance is not enough");
+            }
+            // 按总价加积分，并基于“累计积分”重算等级，避免跨阈值退款时等级不回退
+            int addPoints = totalAmount.intValue();
+            int nextPoints = member.getPoints() + addPoints;
+            int nextLevel = nextPoints / 1000 + 1;
+            member.setBalance(member.getBalance().subtract(paidAmount));
+            member.setPoints(nextPoints);
+            member.setLevel(Math.max(nextLevel, 1));
+            memberMapper.updateBenefits(member);
+        }
+
         SalesOrder order = new SalesOrder();
         order.setOrderNo(generateOrderNo());
         order.setMemberId(request.memberId());
         order.setTotalAmount(totalAmount);
-        order.setPaidAmount(totalAmount);
+        order.setPaidAmount(paidAmount);
         order.setRefundAmount(BigDecimal.ZERO);
         order.setStatus(1);
         order.setPayType(request.payType());
         order.setCashierName(cashierName);
         salesOrderMapper.insertOrder(order);
+        if (member != null) {
+            memberMapper.insertBalanceLog(
+                    member.getId(),
+                    paidAmount.negate(),
+                    member.getBalance(),
+                    "SALES_CONSUME",
+                    "sales order: " + order.getOrderNo(),
+                    cashierName);
+        }
 
         for (CreateSalesItemRequest item : request.items()) {
             Product product = productMapper.findById(item.productId());
@@ -107,12 +149,14 @@ public class SalesService {
         return salesOrderMapper.topHotProducts(start, end, safeTopN);
     }
 
-    public List<SalesOrderSummaryResponse> listOrders(int pageNum, int pageSize) {
+    public SalesOrderPageResponse listOrders(int pageNum, int pageSize) {
         // 分页查询销售单列表
         int safePageNum = Math.max(pageNum, 1);
         int safePageSize = Math.min(Math.max(pageSize, 1), 100);
         int offset = (safePageNum - 1) * safePageSize;
-        return salesOrderMapper.listOrders(safePageSize, offset);
+        List<SalesOrderSummaryResponse> records = salesOrderMapper.listOrders(safePageSize, offset);
+        long total = salesOrderMapper.countAllOrders();
+        return new SalesOrderPageResponse(records, total);
     }
 
     public SalesOrderDetailResponse getOrderDetail(Long id) {
@@ -166,6 +210,27 @@ public class SalesService {
             //记录库存流水（退货
             inventoryMapper.insertLog(item.getProductId(), item.getQuantity(), afterQty,
                     "SALES_REFUND_IN", "sales refund: " + order.getOrderNo(), operator);
+        }
+
+        // 会员订单退款：返还余额并回退积分
+        if (order.getMemberId() != null) {
+            Member member = memberMapper.findById(order.getMemberId());
+            if (member != null) {
+                int rollbackPoints = order.getTotalAmount().intValue();
+                int nextPoints = Math.max(member.getPoints() - rollbackPoints, 0);
+                int nextLevel = Math.max(nextPoints / 1000 + 1, 1);
+                member.setPoints(nextPoints);
+                member.setLevel(nextLevel);
+                member.setBalance(member.getBalance().add(order.getPaidAmount()));
+                memberMapper.updateBenefits(member);
+                memberMapper.insertBalanceLog(
+                        member.getId(),
+                        order.getPaidAmount(),
+                        member.getBalance(),
+                        "SALES_REFUND",
+                        "sales refund: " + order.getOrderNo(),
+                        operator);
+            }
         }
 
         //记录退款明细

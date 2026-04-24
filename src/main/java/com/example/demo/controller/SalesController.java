@@ -6,6 +6,7 @@ import com.example.demo.domain.dto.sales.HotProductResponse;
 import com.example.demo.domain.dto.sales.RefundSalesOrderRequest;
 import com.example.demo.domain.dto.sales.SalesRefundResponse;
 import com.example.demo.domain.dto.sales.SalesOrderDetailResponse;
+import com.example.demo.domain.dto.sales.SalesOrderPageResponse;
 import com.example.demo.domain.dto.sales.SalesOrderSummaryResponse;
 import com.example.demo.domain.dto.sales.SalesOverviewResponse;
 import com.example.demo.service.SalesService;
@@ -56,7 +57,7 @@ public class SalesController {
 
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/orders")
-    public ApiResponse<List<SalesOrderSummaryResponse>> listOrders(
+    public ApiResponse<SalesOrderPageResponse> listOrders(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
         // 分页查询销售单列表

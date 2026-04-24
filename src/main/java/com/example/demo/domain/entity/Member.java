@@ -9,6 +9,7 @@ public class Member {
     // 一般做法是：Controller 对外返回 DTO（如 MemberResponse），Service 内部使用 Entity 读写数据库。
     private Long id;
     private String phone;
+    private String password;
     private String name;
     private Integer gender;
     private Integer level;
@@ -36,6 +37,14 @@ public class Member {
 
     public String getName() {
         return name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public void setName(String name) {

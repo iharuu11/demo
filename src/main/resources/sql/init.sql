@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
 CREATE TABLE IF NOT EXISTS member (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     phone VARCHAR(16) NOT NULL UNIQUE,
+    password VARCHAR(128) NOT NULL,
     name VARCHAR(32) NOT NULL,
     gender TINYINT NOT NULL DEFAULT 0,
     level INT NOT NULL DEFAULT 1,
@@ -23,6 +24,10 @@ CREATE TABLE IF NOT EXISTS member (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- 兼容低版本 MySQL：不使用 ADD COLUMN IF NOT EXISTS
+-- 若是升级已有库，请手工执行一次：
+-- ALTER TABLE member ADD COLUMN password VARCHAR(128) NOT NULL DEFAULT '' AFTER phone;
 
 CREATE TABLE IF NOT EXISTS category (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -135,6 +140,19 @@ CREATE TABLE IF NOT EXISTS sales_refund (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_sales_refund_order(sales_order_id),
     INDEX idx_sales_refund_created(created_at)
+);
+
+CREATE TABLE IF NOT EXISTS member_balance_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    member_id BIGINT NOT NULL,
+    delta_amount DECIMAL(10,2) NOT NULL,
+    after_balance DECIMAL(10,2) NOT NULL,
+    biz_type VARCHAR(32) NOT NULL,
+    remark VARCHAR(255) NULL,
+    operator_name VARCHAR(64) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_member_balance_log_member(member_id),
+    INDEX idx_member_balance_log_created(created_at)
 );
 
 CREATE TABLE IF NOT EXISTS sys_role (

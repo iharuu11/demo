@@ -36,7 +36,7 @@ public interface SalesOrderMapper {
     int insertItem(SalesOrderItem item);
 
     @Select("""
-            select coalesce(sum(total_amount), 0)
+            select coalesce(sum(paid_amount - refund_amount), 0)
             from sales_order
             where created_at >= #{startTime} and created_at <= #{endTime}
             """)
@@ -46,6 +46,7 @@ public interface SalesOrderMapper {
             select count(1)
             from sales_order
             where created_at >= #{startTime} and created_at <= #{endTime}
+              and status <> 3
             """)
     long countOrders(@Param("startTime") String startTime, @Param("endTime") String endTime);
 

@@ -36,6 +36,21 @@
     </el-col>
     <el-col :span="12">
       <el-card>
+        <template #header>当前会员</template>
+        <div v-if="currentMember" class="member-box">
+          <div class="stat-item">姓名：{{ currentMember.name }}</div>
+          <div class="stat-item">手机号：{{ currentMember.phone }}</div>
+          <div class="stat-item">等级：{{ currentMember.level }}</div>
+          <div class="stat-item">积分：{{ currentMember.points }}</div>
+          <div class="stat-item">余额：{{ currentMember.balance }}</div>
+          <el-button link type="danger" @click="logoutMember">会员退出</el-button>
+        </div>
+        <div v-else>
+          <div class="stat-item">未登录会员（按散客开单）</div>
+          <el-button link type="primary" @click="openMemberLogin">会员登录</el-button>
+        </div>
+      </el-card>
+      <el-card style="margin-top: 16px">
         <template #header>今日销售概览</template>
         <div class="stat-item">销售额：{{ overview.totalSalesAmount || 0 }}</div>
         <div class="stat-item">订单数：{{ overview.totalOrders || 0 }}</div>
@@ -63,6 +78,17 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-wrap">
+      <el-pagination
+        v-model:current-page="pageNum"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="load"
+        @current-change="load"
+      />
+    </div>
   </el-card>
 
   <el-dialog v-model="detailVisible" title="销售订单明细" width="760px">
@@ -70,9 +96,11 @@
       <div class="receipt-title">销售小票</div>
       <div class="receipt-meta">
         <div>单号：{{ detail.orderNo || '-' }}</div>
+        <div>交易对象：{{ detail.memberId ? `会员#${detail.memberId}` : '散客' }}</div>
         <div>支付方式：{{ payTypeText(detail.payType) }}</div>
         <div>收银员：{{ detail.cashierName || '-' }}</div>
-        <div>开单时间：{{ detail.createdAt || '-' }}</div>
+        <div>开单日期：{{ formatDate(detail.createdAt) }}</div>
+        <div>具体时间：{{ formatTime(detail.createdAt) }}</div>
       </div>
 
       <el-table :data="detail.items || []" size="small" style="margin-top: 12px">
@@ -96,22 +124,41 @@
       <el-button type="primary" @click="printReceipt" :disabled="detailLoading">打印小票</el-button>
     </template>
   </el-dialog>
+
+  <el-dialog v-model="memberLoginVisible" title="会员登录" width="460px">
+    <el-form :model="memberLoginForm" label-width="90px">
+      <el-form-item label="手机号"><el-input v-model="memberLoginForm.phone" /></el-form-item>
+      <el-form-item label="密码"><el-input v-model="memberLoginForm.password" type="password" show-password /></el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="memberLoginVisible = false">取消</el-button>
+      <el-button type="primary" @click="memberLogin">登录验证</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
 import { usePermission } from '../composables/usePermission'
+import { useMemberStore } from '../stores/member'
 
 const overview = ref({})
 const orders = ref([])
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(10)
 const productOptions = ref([])
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const detail = ref({ items: [] })
+const memberLoginVisible = ref(false)
 const form = reactive({ payType: 'CASH', items: [{ productId: null, quantity: 1 }] })
+const memberLoginForm = reactive({ phone: '', password: '' })
 const { can } = usePermission()
+const memberStore = useMemberStore()
+const currentMember = computed(() => memberStore.currentMember)
 
 const loadProducts = async () => {
   const products = await request.get('/products', { params: { pageNum: 1, pageSize: 100 } })
@@ -135,7 +182,9 @@ const removeItem = (index) => {
 const load = async () => {
   // 加载今日销售概览 + 销售订单列表
   overview.value = await request.get('/sales/stats/overview/today')
-  orders.value = await request.get('/sales/orders')
+  const page = await request.get('/sales/orders', { params: { pageNum: pageNum.value, pageSize: pageSize.value } })
+  orders.value = page.records || []
+  total.value = page.total || 0
 }
 const create = async () => {
   if (!form.items.length) {
@@ -156,10 +205,32 @@ const create = async () => {
   }
   const items = Array.from(merged.entries()).map(([productId, quantity]) => ({ productId, quantity }))
 
-  await request.post('/sales/orders', { payType: form.payType, items })
+  await request.post('/sales/orders', { memberId: memberStore.currentMember?.id || null, payType: form.payType, items })
   ElMessage.success('开单成功')
+  if (memberStore.currentMember?.id) {
+    const latestMember = await request.get(`/members/${memberStore.currentMember.id}`)
+    memberStore.setCurrentMember(latestMember)
+  }
   form.items = [{ productId: productOptions.value[0]?.id || null, quantity: 1 }]
+  pageNum.value = 1
   load()
+}
+
+const logoutMember = () => {
+  memberStore.clearCurrentMember()
+  ElMessage.success('已退出当前会员')
+}
+
+const openMemberLogin = () => {
+  Object.assign(memberLoginForm, { phone: '', password: '' })
+  memberLoginVisible.value = true
+}
+
+const memberLogin = async () => {
+  const data = await request.post('/members/login', memberLoginForm)
+  memberStore.setCurrentMember(data)
+  ElMessage.success(`登录成功：${data.name}（${data.phone}）`)
+  memberLoginVisible.value = false
 }
 
 const payTypeText = (payType) => {
@@ -174,6 +245,18 @@ const orderStatusText = (status) => {
 const formatAmount = (amount) => {
   const value = Number(amount)
   return Number.isFinite(value) ? value.toFixed(2) : '0.00'
+}
+
+const formatDate = (dateTime) => {
+  if (!dateTime) return '-'
+  return String(dateTime).split('T')[0] || '-'
+}
+
+const formatTime = (dateTime) => {
+  if (!dateTime) return '-'
+  const timePart = String(dateTime).split('T')[1]
+  if (!timePart) return '-'
+  return timePart.split('.')[0] || '-'
 }
 
 const openDetail = async (id) => {
@@ -227,9 +310,11 @@ const printReceipt = () => {
         <div class="title">销售小票</div>
         <div class="meta">
           <div>单号：${detail.value.orderNo || '-'}</div>
+          <div>交易对象：${detail.value.memberId ? `会员#${detail.value.memberId}` : '散客'}</div>
           <div>支付方式：${payTypeText(detail.value.payType)}</div>
           <div>收银员：${detail.value.cashierName || '-'}</div>
-          <div>开单时间：${detail.value.createdAt || '-'}</div>
+          <div>开单日期：${formatDate(detail.value.createdAt)}</div>
+          <div>开单时间：${formatTime(detail.value.createdAt)}</div>
         </div>
         <table>
           <thead>
@@ -261,6 +346,10 @@ const printReceipt = () => {
 const refund = async (id) => {
   await ElMessageBox.confirm('确认退款该销售单吗？', '提示', { type: 'warning' })
   await request.put(`/sales/orders/${id}/refund`, { reason: '前端退款' })
+  if (memberStore.currentMember?.id) {
+    const latestMember = await request.get(`/members/${memberStore.currentMember.id}`)
+    memberStore.setCurrentMember(latestMember)
+  }
   ElMessage.success('退款成功')
   load()
 }
@@ -272,10 +361,12 @@ onMounted(async () => {
 
 <style scoped>
 .stat-item { margin-bottom:10px }
+.member-box { color: #606266; }
 .sales-items-wrap { width: 100%; }
 .sales-item-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .receipt-wrap { padding: 4px 2px; }
 .receipt-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .receipt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; color: #606266; }
 .receipt-total { margin-top: 12px; display: flex; justify-content: flex-end; gap: 20px; font-size: 15px; font-weight: 600; }
+.pagination-wrap { margin-top: 12px; display: flex; justify-content: flex-end; }
 </style>
