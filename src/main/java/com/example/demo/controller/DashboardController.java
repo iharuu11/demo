@@ -19,15 +19,15 @@ public class DashboardController {
         this.dashboardService = dashboardService;
     }
 
-    //@preauthorize用于校验用户是否登录，hasanyrole('ADMIN','STAFF')表示用户必须登录，且角色为ADMIN或STAFF
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    //@preauthorize用于校验用户是否登录，hasAuthority('dashboard:view')表示用户必须登录，且具有dashboard:view权限
+    @PreAuthorize("hasAuthority('dashboard:view')")
     @GetMapping("/overview/today")
     //返回今日销售概览，销售额、订单数、客单价
     public ApiResponse<DashboardOverviewResponse> todayOverview() {
         return ApiResponse.success(dashboardService.todayOverview());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('dashboard:view')")
     @GetMapping("/inventory-warnings")
     public ApiResponse<InventoryWarningPageResponse> inventoryWarnings(
             @RequestParam(defaultValue = "1") int pageNum,

@@ -184,21 +184,35 @@ CREATE TABLE IF NOT EXISTS sys_user_role (
 INSERT IGNORE INTO sys_role(code, name, status) VALUES ('ADMIN', '管理员', 1), ('STAFF', '员工', 1);
 
 INSERT IGNORE INTO sys_permission(code, name, type) VALUES
+('dashboard:view', '查看运营看板', 'API'),
+('product:category:view', '查看商品分类', 'API'),
 ('product:category:create', '创建商品分类', 'API'),
 ('product:category:update', '更新商品分类', 'API'),
 ('product:category:delete', '删除商品分类', 'API'),
+('product:view', '查看商品', 'API'),
 ('product:create', '创建商品', 'API'),
 ('product:update', '更新商品', 'API'),
 ('product:status:update', '商品上下架', 'API'),
 ('product:delete', '删除商品', 'API'),
+('inventory:view', '查看库存', 'API'),
+('inventory:log:view', '查看库存流水', 'API'),
 ('inventory:adjust', '库存调整', 'API'),
 ('inventory:warning:update', '更新库存预警值', 'API'),
+('purchase:supplier:view', '查看供应商', 'API'),
 ('purchase:supplier:create', '创建供应商', 'API'),
 ('purchase:supplier:update', '更新供应商', 'API'),
 ('purchase:supplier:status:update', '更新供应商状态', 'API'),
+('purchase:order:view', '查看采购单', 'API'),
 ('purchase:order:create', '创建采购单', 'API'),
 ('purchase:order:stock-in', '采购单入库', 'API'),
 ('purchase:order:cancel', '取消采购单', 'API'),
+('member:view', '查看会员', 'API'),
+('member:create', '创建会员', 'API'),
+('member:update', '更新会员', 'API'),
+('member:status:update', '更新会员状态', 'API'),
+('member:login', '会员登录', 'API'),
+('member:balance:log:view', '查看会员余额流水', 'API'),
+('sales:view', '查看销售', 'API'),
 ('sales:create', '销售开单', 'API'),
 ('sales:refund', '销售退款', 'API');
 
@@ -209,10 +223,18 @@ WHERE r.code = 'ADMIN';
 INSERT IGNORE INTO sys_role_permission(role_id, permission_id)
 SELECT r.id, p.id FROM sys_role r
 JOIN sys_permission p ON p.code IN (
+    'dashboard:view',
+    'product:category:view', 'product:category:create', 'product:category:update', 'product:category:delete',
+    'product:view',
     'product:create', 'product:update', 'product:status:update',
+    'inventory:view', 'inventory:log:view',
     'inventory:adjust', 'inventory:warning:update',
+    'purchase:supplier:view',
     'purchase:supplier:create', 'purchase:supplier:update', 'purchase:supplier:status:update',
+    'purchase:order:view',
     'purchase:order:create', 'purchase:order:stock-in', 'purchase:order:cancel',
+    'member:view', 'member:create', 'member:update', 'member:status:update', 'member:login', 'member:balance:log:view',
+    'sales:view',
     'sales:create', 'sales:refund'
 )
 WHERE r.code = 'STAFF';

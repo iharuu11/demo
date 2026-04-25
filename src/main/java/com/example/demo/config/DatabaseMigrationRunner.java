@@ -108,6 +108,12 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         // 兼容已有数据库：补齐商品分类权限点，并授予 ADMIN / STAFF
         jdbcTemplate.update(
                 "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "dashboard:view", "查看运营看板", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "product:category:view", "查看商品分类", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
                 "product:category:create", "创建商品分类", "API");
         jdbcTemplate.update(
                 "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
@@ -115,15 +121,65 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         jdbcTemplate.update(
                 "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
                 "product:category:delete", "删除商品分类", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "product:view", "查看商品", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "inventory:view", "查看库存", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "inventory:log:view", "查看库存流水", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "purchase:supplier:view", "查看供应商", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "purchase:order:view", "查看采购单", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "member:view", "查看会员", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "member:create", "创建会员", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "member:update", "更新会员", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "member:status:update", "更新会员状态", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "member:login", "会员登录", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "member:balance:log:view", "查看会员余额流水", "API");
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO sys_permission(code, name, type) VALUES (?, ?, ?)",
+                "sales:view", "查看销售", "API");
 
         jdbcTemplate.execute("""
                 INSERT IGNORE INTO sys_role_permission(role_id, permission_id)
                 SELECT r.id, p.id
                 FROM sys_role r
                 JOIN sys_permission p ON p.code IN (
+                    'dashboard:view',
+                    'product:category:view',
                     'product:category:create',
                     'product:category:update',
-                    'product:category:delete'
+                    'product:category:delete',
+                    'product:view',
+                    'inventory:view',
+                    'inventory:log:view',
+                    'purchase:supplier:view',
+                    'purchase:order:view',
+                    'member:view',
+                    'member:create',
+                    'member:update',
+                    'member:status:update',
+                    'member:login',
+                    'member:balance:log:view',
+                    'sales:view'
                 )
                 WHERE r.code IN ('ADMIN', 'STAFF')
                 """);

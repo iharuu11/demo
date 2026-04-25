@@ -7,17 +7,17 @@
       把当前路由路径作为默认激活项，所以当前页面对应的菜单会高亮
       使用 router 模式让菜单项点击后自动导航到对应路由 -->
       <el-menu :default-active="$route.path" router class="menu">
-        <el-menu-item index="/dashboard">运营看板</el-menu-item>
-        <el-menu-item index="/products" v-if="can('product:create') || can('product:update') || can('product:delete')">商品管理</el-menu-item>
-        <el-menu-item index="/categories" v-if="can('product:category:create') || can('product:category:update') || can('product:category:delete')">商品分类</el-menu-item>
-        <el-menu-item index="/inventory" v-if="can('inventory:adjust') || can('inventory:warning:update')">库存管理</el-menu-item>
-        <el-menu-item index="/inventory-logs" v-if="can('inventory:adjust') || can('inventory:warning:update')">库存流水</el-menu-item>
+        <el-menu-item index="/dashboard" v-if="can('dashboard:view')">运营看板</el-menu-item>
+        <el-menu-item index="/products" v-if="can('product:view')">商品管理</el-menu-item>
+        <el-menu-item index="/categories" v-if="can('product:category:view')">商品分类</el-menu-item>
+        <el-menu-item index="/inventory" v-if="can('inventory:view')">库存管理</el-menu-item>
+        <el-menu-item index="/inventory-logs" v-if="can('inventory:log:view')">库存流水</el-menu-item>
         <el-menu-item index="/permission-assign" v-if="auth.role === 'ADMIN'">权限分配</el-menu-item>
-        <el-menu-item index="/members" v-if="auth.role!='TOURIST'">会员管理</el-menu-item>
-        <el-menu-item index="/member-balance-logs" v-if="auth.role!='TOURIST'">会员余额流水</el-menu-item>
-        <el-menu-item index="/purchases" v-if="can('purchase:order:create') || can('purchase:order:stock-in')">采购管理</el-menu-item>
-        <el-menu-item index="/suppliers" v-if="can('purchase:supplier:create') || can('purchase:supplier:update') || can('purchase:supplier:status:update')">供应商管理</el-menu-item>
-        <el-menu-item index="/sales" v-if="can('sales:create') || can('sales:refund')">销售管理</el-menu-item>
+        <el-menu-item index="/members" v-if="can('member:view')">会员管理</el-menu-item>
+        <el-menu-item index="/member-balance-logs" v-if="can('member:balance:log:view')">会员余额流水</el-menu-item>
+        <el-menu-item index="/purchases" v-if="can('purchase:order:view')">采购管理</el-menu-item>
+        <el-menu-item index="/suppliers" v-if="can('purchase:supplier:view')">供应商管理</el-menu-item>
+        <el-menu-item index="/sales" v-if="can('sales:view')">销售管理</el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

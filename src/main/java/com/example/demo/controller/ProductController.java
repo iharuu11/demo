@@ -49,7 +49,7 @@ public class ProductController {
         return ApiResponse.success(productService.createCategory(request));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('product:category:view')")
     @GetMapping("/categories")
     public ApiResponse<List<CategoryResponse>> listCategories() {
         // 查询分类列表（登录即可）
@@ -81,7 +81,7 @@ public class ProductController {
         return ApiResponse.success(productService.createProduct(request));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('product:view')")
     @GetMapping
     public ApiResponse<ProductPageResponse> listProducts(
             @RequestParam(required = false) String keyword,
@@ -131,7 +131,7 @@ public class ProductController {
         return ApiResponse.success();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('inventory:view')")
     @GetMapping("/inventory")
     public ApiResponse<InventoryPageResponse> listInventory(
             @RequestParam(required = false) String keyword,
@@ -150,7 +150,7 @@ public class ProductController {
         return ApiResponse.success();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('inventory:log:view')")
     @GetMapping("/inventory/logs")
     //查询库存流水，productId为空时查询所有，否则查询指定商品的流水
     public ApiResponse<InventoryLogPageResponse> listInventoryLogs(

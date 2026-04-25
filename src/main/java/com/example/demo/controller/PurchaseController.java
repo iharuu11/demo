@@ -42,14 +42,14 @@ public class PurchaseController {
         return ApiResponse.success(purchaseService.createSupplier(request));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('purchase:supplier:view')")
     @GetMapping("/suppliers")
     public ApiResponse<List<Supplier>> listSuppliers() {
         // 查询供应商列表（无分页）
         return ApiResponse.success(purchaseService.listSuppliers());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('purchase:supplier:view')")
     @GetMapping("/suppliers/page")
     public ApiResponse<SupplierPageResponse> listSuppliersPaged(
             @RequestParam(required = false) String keyword,
@@ -82,7 +82,7 @@ public class PurchaseController {
         return ApiResponse.success(purchaseService.createOrder(request, authentication.getName()));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('purchase:order:view')")
     @GetMapping("/orders")
     public ApiResponse<PurchaseOrderPageResponse> listOrders(
             @RequestParam(required = false) Integer status,
@@ -95,7 +95,7 @@ public class PurchaseController {
         return ApiResponse.success(purchaseService.listOrders(status, orderNo, startTime, endTime, pageNum, pageSize));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('purchase:order:view')")
     @GetMapping("/orders/{id}")
     public ApiResponse<PurchaseOrderDetailResponse> orderDetail(@PathVariable Long id) {
         // 根据id查询采购单详情（含采购明细）

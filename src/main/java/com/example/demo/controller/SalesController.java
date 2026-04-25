@@ -41,21 +41,21 @@ public class SalesController {
         return ApiResponse.success(salesService.createOrder(request, authentication.getName()));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('sales:view')")
     @GetMapping("/stats/overview/today")
     public ApiResponse<SalesOverviewResponse> todayOverview() {
         // 今日销售概览：销售额、订单数、客单价
         return ApiResponse.success(salesService.todayOverview());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('sales:view')")
     @GetMapping("/stats/hot-products/today")
     public ApiResponse<List<HotProductResponse>> todayHotProducts(@RequestParam(defaultValue = "10") int topN) {
         // 今日热销商品排行（topN）
         return ApiResponse.success(salesService.todayHotProducts(topN));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('sales:view')")
     @GetMapping("/orders")
     public ApiResponse<SalesOrderPageResponse> listOrders(
             @RequestParam(defaultValue = "1") int pageNum,
@@ -64,7 +64,7 @@ public class SalesController {
         return ApiResponse.success(salesService.listOrders(pageNum, pageSize));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('sales:view')")
     @GetMapping("/orders/{id}")
     public ApiResponse<SalesOrderDetailResponse> orderDetail(@PathVariable Long id) {
         // 查询销售单详情（含明细项）
@@ -84,7 +84,7 @@ public class SalesController {
         return ApiResponse.success();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('sales:view')")
     @GetMapping("/refunds")
     public ApiResponse<List<SalesRefundResponse>> listRefunds(
             @RequestParam(defaultValue = "1") int pageNum,

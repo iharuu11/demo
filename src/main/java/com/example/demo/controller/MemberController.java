@@ -30,19 +30,19 @@ public class MemberController {
         this.memberService = memberService;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('member:create')")
     @PostMapping("/register")
     public ApiResponse<MemberResponse> register(@Valid @RequestBody CreateMemberRequest request) {
         return ApiResponse.success(memberService.create(request));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('member:login')")
     @PostMapping("/login")
     public ApiResponse<MemberResponse> login(@Valid @RequestBody MemberLoginRequest request) {
         return ApiResponse.success(memberService.login(request));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('member:create')")
     @PostMapping
     public ApiResponse<MemberResponse> create(@Valid @RequestBody CreateMemberRequest request) {
         // 新增会员（需要登录，且角色为 ADMIN/STAFF 才能操作）：
@@ -51,7 +51,7 @@ public class MemberController {
         return ApiResponse.success(memberService.create(request));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('member:view')")
     @GetMapping
     public ApiResponse<MemberPageResponse> list(
             @RequestParam(required = false) String keyword,
@@ -63,7 +63,7 @@ public class MemberController {
         return ApiResponse.success(memberService.list(keyword, pageNum, pageSize));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('member:balance:log:view')")
     @GetMapping("/balance-logs")
     public ApiResponse<MemberBalanceLogPageResponse> listBalanceLogs(
             @RequestParam(required = false) String keyword,
@@ -73,20 +73,20 @@ public class MemberController {
         return ApiResponse.success(memberService.listBalanceLogs(keyword, bizType, pageNum, pageSize));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('member:view')")
     @GetMapping("/{id}")
     public ApiResponse<MemberResponse> getById(@PathVariable Long id) {
         return ApiResponse.success(memberService.getById(id));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('member:update')")
     @PutMapping("/{id}")
     public ApiResponse<Void> update(@PathVariable Long id, @Valid @RequestBody UpdateMemberRequest request, Authentication authentication) {
         memberService.update(id, request, authentication.getName());
         return ApiResponse.success();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
+    @PreAuthorize("hasAuthority('member:status:update')")
     @PutMapping("/{id}/status")
     public ApiResponse<Void> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
         memberService.updateStatus(id, status);
